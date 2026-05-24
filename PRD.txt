@@ -1,0 +1,501 @@
+# Product Requirements Document (PRD)
+
+# Enterprise Workflow Management System
+
+---
+
+# 1. Product Overview
+
+## Vision
+
+Build a configurable enterprise workflow execution platform where organizations can:
+
+* create reusable workflow templates
+* configure stations and station owners
+* define workflow transitions
+* attach business tasks to stations
+* execute workflow instances securely
+* maintain complete workflow audit history
+
+The platform should be enterprise-ready from the beginning with:
+
+* RBAC
+* external authentication
+* strict workflow validation
+* modular architecture
+* immutable audit logs
+
+---
+
+# 2. Product Scope
+
+## Phase 1
+
+### Authentication & Authorization
+
+* Keycloak integration
+* JWT authentication
+* Role-based access control
+
+### Workflow Creator
+
+* Create workflow templates
+* Add workflow stations
+* Configure station owners (roles)
+* Configure transitions
+* Publish workflow versions
+
+### Workflow Execution
+
+* Create workflow instances
+* Move workflows forward/backward
+* Workflow state tracking
+* Workflow history tracking
+
+### Dashboard
+
+* Active workflows
+* Completed workflows
+* Assigned workflows
+
+---
+
+## Phase 2
+
+### Task System
+
+* Station-level tasks
+* Required task validation
+* Task execution tracking
+
+### Document Management
+
+* Upload documents
+* Attach documents to workflows/stations
+
+### Notifications
+
+* Email notifications
+* Workflow movement alerts
+
+### Dynamic Configuration
+
+* JSON-based station/task configuration
+
+---
+
+# 3. Core Concepts
+
+# Workflow Template
+
+Reusable master workflow definition.
+
+Example:
+
+* SDLC Workflow
+* Insurance Claim Workflow
+* Purchase Approval Workflow
+
+Templates are versioned and immutable after publishing.
+
+---
+
+# Workflow Station
+
+A workflow state where actions occur.
+
+Examples:
+
+* Requirement Gathering
+* Development
+* QA
+* Approval
+* Deployment
+
+Each station contains:
+
+* allowed owner roles
+* tasks
+* validations
+* transitions
+
+---
+
+# Workflow Transition
+
+Defines allowed movement between stations.
+
+Example:
+
+```text id="lkv6z7"
+Development → QA
+QA → Deployment
+QA → Development
+```
+
+---
+
+# Workflow Instance
+
+A running execution created from a workflow template.
+
+Example:
+
+```text id="jlwm7v"
+Claim #1024
+```
+
+Each instance maintains:
+
+* current station
+* current status
+* workflow data
+* workflow history
+
+---
+
+# Workflow Engine
+
+Central orchestration layer responsible for:
+
+* permission validation
+* transition validation
+* task validation
+* workflow movement
+* audit history creation
+
+All workflow movement must pass through workflow engine.
+
+---
+
+# 4. Technology Stack
+
+| Layer            | Technology            |
+| ---------------- | --------------------- |
+| Backend          | Django                |
+| API              | Django REST Framework |
+| Authentication   | Keycloak              |
+| Database         | PostgreSQL            |
+| Frontend         | Angular               |
+| Containerization | Docker                |
+
+---
+
+# 5. Workflow Creator
+
+## Overview
+
+Workflow Creator is the configuration module used by admins to build reusable workflow templates.
+
+It supports:
+
+* workflow creation
+* station configuration
+* station owner configuration
+* transition configuration
+* task configuration
+* workflow publishing
+
+---
+
+# Workflow Creator Flow
+
+```text id="tdtr53"
+Create Workflow Template
+        ↓
+Add Stations
+        ↓
+Assign Station Roles
+        ↓
+Configure Tasks
+        ↓
+Configure Transitions
+        ↓
+Publish Workflow
+```
+
+---
+
+# 6. Station Configuration
+
+Each station must support:
+
+| Feature       | Description                      |
+| ------------- | -------------------------------- |
+| Name          | Station name                     |
+| Description   | Business description             |
+| Type          | START / NORMAL / END             |
+| Allowed Roles | Roles allowed to control station |
+| Tasks         | Executable business tasks        |
+| Configuration | JSON-based dynamic configuration |
+| Auto Move     | Automatic transition support     |
+
+---
+
+# Station Ownership Rules
+
+* Only allowed roles can act on station
+* Only station owners can:
+
+  * move workflow
+  * execute tasks
+  * approve/reject transitions
+
+Example:
+
+```text id="6q3cjp"
+Station:
+QA
+
+Allowed Roles:
+QA_TEAM
+QA_MANAGER
+```
+
+---
+
+# 7. Task System
+
+Stations can contain configurable tasks.
+
+---
+
+# Supported Task Types
+
+| Task Type | Purpose                 |
+| --------- | ----------------------- |
+| APPROVAL  | Approve/reject workflow |
+| FORM      | Fill structured data    |
+| DOCUMENT  | Upload required files   |
+| PAYMENT   | Execute payment flow    |
+| API       | Call external APIs      |
+| EMAIL     | Send notifications      |
+
+---
+
+# Task Rules
+
+* Tasks can be marked required
+* Required tasks must complete before transition
+* Task execution must be tracked
+* Failed tasks block workflow movement
+
+---
+
+# Example
+
+```text id="5gzw0n"
+Station:
+Checkout
+
+Tasks:
+1. Payment Task
+2. Invoice Generation
+
+Rule:
+Workflow moves forward only after successful payment.
+```
+
+---
+
+# 8. Workflow Execution
+
+# Workflow Instance Flow
+
+```text id="2hlf1r"
+Workflow Instance Created
+        ↓
+Workflow Starts At START Station
+        ↓
+Station Tasks Executed
+        ↓
+Authorized User Moves Workflow
+        ↓
+History Created
+        ↓
+Next Station Activated
+```
+
+---
+
+# Workflow Rules
+
+## Rule 1
+
+Workflow behaves as a state machine.
+
+---
+
+## Rule 2
+
+Transitions must exist before movement.
+
+---
+
+## Rule 3
+
+Only authorized station owners can move workflow.
+
+---
+
+## Rule 4
+
+Required tasks must complete before movement.
+
+---
+
+## Rule 5
+
+Workflow transitions must be transactional.
+
+---
+
+# 9. Audit & History
+
+Every workflow action must create immutable history.
+
+---
+
+# History Must Include
+
+* from station
+* to station
+* performed by
+* timestamp
+* remarks
+* action type
+
+---
+
+# Audit Rules
+
+* History is append-only
+* Audit logs cannot be deleted
+* Every transition must create history
+
+---
+
+# 10. Document Management
+
+Users can:
+
+* upload workflow documents
+* attach documents to stations
+* view uploaded documents
+
+Document upload history must be maintained.
+
+---
+
+# 11. Notifications
+
+System should support:
+
+* workflow movement notifications
+* task completion notifications
+* assignment notifications
+
+Initial implementation:
+
+* email notifications only
+
+---
+
+# 12. Architecture Principles
+
+# Architecture Style
+
+## Modular Monolith
+
+Reason:
+
+* simpler development
+* easier maintenance
+* enterprise-ready structure
+* future microservice migration possible
+
+---
+
+# Engineering Rules
+
+## Rule 1
+
+Business logic must remain in service layer.
+
+---
+
+## Rule 2
+
+Workflow engine is single source of truth.
+
+---
+
+## Rule 3
+
+No direct workflow state modification from controllers/views.
+
+---
+
+## Rule 4
+
+Templates are immutable after publishing.
+
+---
+
+## Rule 5
+
+Workflow instances must reference template versions.
+
+---
+
+# 13. Non-Functional Requirements
+
+| Requirement     | Target                             |
+| --------------- | ---------------------------------- |
+| Security        | JWT + RBAC                         |
+| Reliability     | Transaction-safe workflow movement |
+| Scalability     | 10k+ workflow instances            |
+| Performance     | Sub-500ms transition APIs          |
+| Auditability    | Immutable history tracking         |
+| Maintainability | Future plugin/microservice ready   |
+
+---
+
+# 14. Initial Deliverables
+
+# Phase 1 Deliverables
+
+* Keycloak authentication
+* RBAC
+* Workflow templates
+* Stations
+* Transitions
+* Workflow engine
+* Workflow instances
+* Workflow history
+* Angular dashboard
+
+---
+
+# Phase 2 Deliverables
+
+* Task system
+* Document uploads
+* Notifications
+* Task execution tracking
+* Dynamic configurations
+
+---
+
+# 15. Success Criteria
+
+Project is successful when:
+
+* workflows can be configured dynamically
+* RBAC works correctly
+* workflow movement is secure and validated
+* station ownership is enforced
+* tasks execute correctly
+* audit history is immutable
+* templates are reusable and versioned
+* architecture supports future expansion without rewrites

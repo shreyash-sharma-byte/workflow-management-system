@@ -1,0 +1,60 @@
+{
+  "realm": "workflow-realm",
+  "enabled": true,
+  "displayName": "Workflow Management Platform",
+  "roles": {
+    "realm": [
+      {"name": "ADMIN", "description": "System Administrator"},
+      {"name": "PM_TEAM", "description": "Product Management Team"},
+      {"name": "PM_MANAGER", "description": "Product Management Manager"},
+      {"name": "DEV_TEAM", "description": "Development Team"},
+      {"name": "DEV_LEAD", "description": "Development Lead"},
+      {"name": "QA_TEAM", "description": "QA Team"},
+      {"name": "QA_MANAGER", "description": "QA Manager"},
+      {"name": "DEV_OPS", "description": "DevOps Team"},
+      {"name": "AUDITOR", "description": "Auditor"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "workflow-platform",
+      "name": "Workflow Platform",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:8000/*"
+      ],
+      "webOrigins": ["+"]
+    }
+  ],
+  "users": [
+    {"username": "priya", "email": "priya@company.com", "firstName": "Priya", "lastName": "Sharma", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["ADMIN"]},
+    {"username": "ananya", "email": "ananya@company.com", "firstName": "Ananya", "lastName": "Gupta", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["PM_TEAM"]},
+    {"username": "vikram", "email": "vikram@company.com", "firstName": "Vikram", "lastName": "Singh", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["DEV_TEAM"]},
+    {"username": "raj", "email": "raj@company.com", "firstName": "Raj", "lastName": "Kumar", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["QA_TEAM"]},
+    {"username": "neha", "email": "neha@company.com", "firstName": "Neha", "lastName": "Desai", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["AUDITOR"]},
+    {"username": "arjun", "email": "arjun@company.com", "firstName": "Arjun", "lastName": "Mehta", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["PM_TEAM"]},
+    {"username": "amit.manager", "email": "amit.manager@company.com", "firstName": "Amit", "lastName": "Shah", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["QA_MANAGER"]},
+    {"username": "ops.rajesh", "email": "rajesh@company.com", "firstName": "Rajesh", "lastName": "Kumar", "enabled": true,
+     "credentials": [{"type": "password", "value": "Workflow@123", "temporary": false}],
+     "realmRoles": ["DEV_OPS"]}
+  ]
+}

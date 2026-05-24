@@ -1,0 +1,31 @@
+# Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+.env
+media/
+staticfiles/
+
+# Angular
+node_modules/
+dist/
+.angular/
+
+# Docker
+postgres_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+.venv/
+venv/
+*.egg-info/
