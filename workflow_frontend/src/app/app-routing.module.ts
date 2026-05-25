@@ -18,20 +18,43 @@ const routes: Routes = [
     component: LayoutComponent,
     canActivate: [AuthGuard],
     children: [
+      // ── Primary Views ──────────────────────────────
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
 
-      // Templates (Admin only for create/edit)
+      // ── Work Items: My Tasks (NEW — operator-first) ─
+      {
+        path: 'my-tasks',
+        component: InstanceListComponent,  // Reuses instance list; can be swapped for dedicated component later
+        data: { filter: 'my-tasks' },
+      },
+
+      // ── Templates ──────────────────────────────────
       { path: 'templates', component: TemplateListComponent },
       { path: 'templates/new', component: TemplateCreateComponent, canActivate: [AdminGuard] },
       { path: 'templates/:id', component: TemplateDetailComponent },
       { path: 'templates/:id/stations', component: StationBuilderComponent, canActivate: [AdminGuard] },
       { path: 'templates/:id/transitions', component: TransitionBuilderComponent, canActivate: [AdminGuard] },
 
-      // Instances
+      // ── Instances ──────────────────────────────────
       { path: 'instances', component: InstanceListComponent },
       { path: 'instances/new', component: InstanceCreateComponent, canActivate: [InitiatorGuard] },
       { path: 'instances/:id', component: InstanceDetailComponent },
+
+      // ── Notifications (NEW) ────────────────────────
+      {
+        path: 'notifications',
+        component: DashboardComponent,  // Placeholder; can be swapped for dedicated NotificationsComponent
+        data: { view: 'notifications' },
+      },
+
+      // ── Admin Panel (NEW — admin only) ─────────────
+      {
+        path: 'admin',
+        component: DashboardComponent,
+        canActivate: [AdminGuard],
+        data: { view: 'admin' },
+      },
     ],
   },
 ];

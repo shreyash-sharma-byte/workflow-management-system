@@ -6,12 +6,13 @@ import { WorkflowTemplate } from '../../../shared/models/types';
 @Component({
   selector: 'app-instance-create',
   template: `
-    <h2>Initiate New Workflow Instance</h2>
-    <div class="card" style="max-width:600px;">
+    <h2 class="mb-2">Initiate New Workflow Instance</h2>
+    <div class="card max-w-md">
+      <div class="card-body">
       <div class="form-group">
         <label class="form-label">Select Template *</label>
         <select class="form-select" [(ngModel)]="templateId" (change)="onTemplateChange()">
-          <option [ngValue]="null">-- Choose --</option>
+          <option [ngValue]="null">-- Choose a template --</option>
           <option *ngFor="let t of templates" [ngValue]="t.id">{{ t.name }} {{ t.current_version_info?.version_label ? '(' + t.current_version_info.version_label + ')' : '' }}</option>
         </select>
       </div>
@@ -28,6 +29,7 @@ import { WorkflowTemplate } from '../../../shared/models/types';
         <button class="btn btn-outline" routerLink="/instances">Cancel</button>
       </div>
       <div *ngIf="error" class="mt-1" style="color:var(--danger);">{{ error }}</div>
+      </div>
     </div>
   `,
 })

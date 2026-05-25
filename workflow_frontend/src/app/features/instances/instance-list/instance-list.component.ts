@@ -6,35 +6,95 @@ import { WorkflowInstance } from '../../../shared/models/types';
 @Component({
   selector: 'app-instance-list',
   template: `
-    <div class="flex-between mb-1">
-      <h2>Workflow Instances</h2>
-      <a *ngIf="auth.isInitiator" class="btn btn-success" routerLink="/instances/new">+ New Instance</a>
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h1 class="page-title" style="margin-bottom:var(--space-1);">Instances</h1>
+        <p class="text-sm text-muted">
+          {{ instances.length }} workflow instance{{ instances.length !== 1 ? 's' : '' }}
+          <span *ngIf="statusFilter">· Filtered by {{ statusFilter | lowercase }}</span>
+        </p>
+      </div>
+      <a *ngIf="auth.isInitiator" class="btn btn-primary" routerLink="/instances/new">
+        + New Instance
+      </a>
     </div>
 
-    <div class="flex gap-1 mb-1">
-      <select class="form-select" style="width:auto;" [(ngModel)]="statusFilter" (change)="load()">
-        <option value="">All Status</option>
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-4">
+      <input
+        class="form-input search-input"
+        [(ngModel)]="search"
+        (input)="load()"
+        placeholder="Search by reference or title...">
+      <select class="form-select" [(ngModel)]="statusFilter" (change)="load()">
+        <option value="">All Statuses</option>
         <option value="ACTIVE">Active</option>
         <option value="COMPLETED">Completed</option>
         <option value="CANCELLED">Cancelled</option>
       </select>
-      <input class="form-input" style="width:250px;" [(ngModel)]="search" (input)="load()" placeholder="Search reference or title...">
     </div>
 
-    <div class="card">
-      <table class="table">
-        <thead><tr><th>Ref</th><th>Title</th><th>Template</th><th>Station</th><th>Status</th><th>Updated</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let i of instances" [routerLink]="['/instances', i.id]" style="cursor:pointer;">
-            <td><strong>{{ i.reference }}</strong></td>
-            <td>{{ i.title }}</td>
-            <td>{{ i.template_name }}</td>
-            <td>{{ i.current_station_name }}</td>
-            <td><span class="badge" [class]="i.status === 'ACTIVE' ? 'badge-info' : i.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'">{{ i.status }}</span></td>
-            <td class="text-sm text-muted">{{ i.updated_at | date:'short' }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Table -->
+    <div class="card" *ngIf="instances.length > 0">
+      <div class="card-body-flush">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Title</th>
+              <th>Template</th>
+              <th>Current Station</th>
+              <th>Status</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let i of instances" class="clickable" [routerLink]="['/instances', i.id]">
+              <td class="cell-primary">{{ i.reference }}</td>
+              <td>
+                <div class="font-medium">{{ i.title }}</div>
+                <div class="text-xs text-muted">by {{ i.initiated_by_name }}</div>
+              </td>
+              <td><span class="text-sm">{{ i.template_name }}</span></td>
+              <td>
+                <span class="badge" [class.badge-primary]="i.status==='ACTIVE'"
+                      [class.badge-neutral]="i.status!=='ACTIVE'">
+                  {{ i.current_station_name }}
+                </span>
+              </td>
+              <td>
+                <span class="status-indicator" [class.active]="i.status==='ACTIVE'"
+                      [class.completed]="i.status==='COMPLETED'"
+                      [class.cancelled]="i.status==='CANCELLED'">
+                  {{ i.status }}
+                </span>
+              </td>
+              <td class="text-sm text-muted cell-nowrap">{{ i.updated_at | date:'short' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="card" *ngIf="instances.length === 0">
+      <div class="empty-state">
+        <div class="empty-state-icon">◎</div>
+        <div class="empty-state-title">No instances found</div>
+        <div class="empty-state-desc" *ngIf="!statusFilter && !search">
+          No workflow instances have been created yet.
+          <ng-container *ngIf="auth.isInitiator">Start by creating your first one.</ng-container>
+        </div>
+        <div class="empty-state-desc" *ngIf="statusFilter || search">
+          No results match your filters. Try adjusting your search or status filter.
+        </div>
+        <a *ngIf="auth.isInitiator && !statusFilter && !search" class="btn btn-primary" routerLink="/instances/new">
+          + Create First Instance
+        </a>
+        <button *ngIf="statusFilter || search" class="btn btn-outline" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
     </div>
   `,
 })
@@ -52,5 +112,11 @@ export class InstanceListComponent implements OnInit {
     if (this.statusFilter) params.status = this.statusFilter;
     if (this.search) params.search = this.search;
     this.api.listInstances(params).subscribe(r => this.instances = r.results);
+  }
+
+  clearFilters(): void {
+    this.statusFilter = '';
+    this.search = '';
+    this.load();
   }
 }

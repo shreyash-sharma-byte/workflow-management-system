@@ -6,75 +6,150 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
 @Component({
   selector: 'app-dashboard',
   template: `
-    <h2 style="margin-bottom:1.5rem;">Dashboard</h2>
-
-    <!-- Stats Grid -->
-    <div class="stats-grid" *ngIf="auth.isAdmin && adminStats">
-      <div class="stat-card">
-        <div class="stat-value">{{ adminStats.total_templates }}</div>
-        <div class="stat-label">Templates</div>
+    <!-- Welcome Banner -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="page-title" style="margin-bottom:var(--space-1);">Good {{ greeting }}, {{ auth.username }}</h1>
+        <p class="text-muted text-md">
+          <ng-container *ngIf="userStats?.my_workload">
+            You have
+            <strong class="text-primary">{{ userStats.my_workload.blocked_by_me || 0 }}</strong> pending actions
+            and <strong>{{ userStats.my_workload.assigned_to_me || 0 }}</strong> assigned tasks.
+          </ng-container>
+        </p>
       </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ adminStats.published_templates }}</div>
-        <div class="stat-label">Published</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ adminStats.total_instances }}</div>
-        <div class="stat-label">Total Instances</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ adminStats.active_instances }}</div>
-        <div class="stat-label">Active Instances</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ adminStats.completed_today }}</div>
-        <div class="stat-label">Completed Today</div>
+      <div class="quick-actions">
+        <a *ngIf="auth.isInitiator" class="btn btn-primary" routerLink="/instances/new">
+          + New Instance
+        </a>
+        <a *ngIf="auth.isAdmin" class="btn btn-outline" routerLink="/templates/new">
+          + New Template
+        </a>
       </div>
     </div>
 
-    <!-- User Stats -->
-    <div class="stats-grid" *ngIf="userStats">
-      <div class="stat-card" *ngIf="userStats.my_workload">
-        <div class="stat-value">{{ userStats.my_workload.assigned_to_me }}</div>
-        <div class="stat-label">Assigned to Me</div>
+    <!-- Stats Grid — Operator View (always visible) -->
+    <div class="section-title">My Workload</div>
+    <div class="stats-grid">
+      <div class="stat-card interactive" routerLink="/my-tasks" *ngIf="userStats?.my_workload">
+        <div class="stat-card-header">
+          <span class="stat-card-icon" style="background:var(--warning-light);">⏳</span>
+        </div>
+        <div class="stat-card-value" style="color:var(--warning);">{{ userStats?.my_workload?.blocked_by_me || 0 }}</div>
+        <div class="stat-card-label">Needs My Action</div>
       </div>
-      <div class="stat-card" *ngIf="userStats.my_workload">
-        <div class="stat-value">{{ userStats.my_workload.blocked_by_me }}</div>
-        <div class="stat-label">Blocked (My Tasks)</div>
+
+      <div class="stat-card interactive" routerLink="/instances" *ngIf="userStats?.my_workload">
+        <div class="stat-card-header">
+          <span class="stat-card-icon" style="background:var(--info-light);">📋</span>
+        </div>
+        <div class="stat-card-value">{{ userStats?.my_workload?.assigned_to_me || 0 }}</div>
+        <div class="stat-card-label">Assigned to Me</div>
       </div>
-      <div class="stat-card" *ngIf="userStats.my_workload">
-        <div class="stat-value">{{ userStats.my_workload.completed_by_me }}</div>
-        <div class="stat-label">Completed by Me</div>
+
+      <div class="stat-card" *ngIf="userStats?.my_workload">
+        <div class="stat-card-header">
+          <span class="stat-card-icon" style="background:var(--success-light);">✓</span>
+        </div>
+        <div class="stat-card-value" style="color:var(--success);">{{ userStats?.my_workload?.completed_by_me || 0 }}</div>
+        <div class="stat-card-label">Completed by Me</div>
       </div>
-      <div class="stat-card" *ngIf="userStats.my_initiated">
-        <div class="stat-value">{{ userStats.my_initiated.total }}</div>
-        <div class="stat-label">My Initiated</div>
+
+      <div class="stat-card interactive" routerLink="/instances" *ngIf="userStats?.my_initiated">
+        <div class="stat-card-header">
+          <span class="stat-card-icon" style="background:var(--primary-light);">▶</span>
+        </div>
+        <div class="stat-card-value" style="color:var(--primary);">{{ userStats?.my_initiated?.total || 0 }}</div>
+        <div class="stat-card-label">Initiated by Me</div>
       </div>
     </div>
 
-    <!-- Recent instances -->
+    <!-- Admin Overview (visible only for admins) -->
+    <ng-container *ngIf="auth.isAdmin && adminStats">
+      <div class="section-title mt-4">System Overview</div>
+      <div class="stats-grid">
+        <div class="stat-card interactive" routerLink="/templates">
+          <div class="stat-card-header">
+            <span class="stat-card-icon" style="background:var(--primary-light);">▦</span>
+          </div>
+          <div class="stat-card-value" style="color:var(--primary);">{{ adminStats.total_templates || 0 }}</div>
+          <div class="stat-card-label">Total Templates</div>
+        </div>
+
+        <div class="stat-card interactive" routerLink="/instances">
+          <div class="stat-card-header">
+            <span class="stat-card-icon" style="background:var(--info-light);">◎</span>
+          </div>
+          <div class="stat-card-value" style="color:var(--info);">{{ adminStats.active_instances || 0 }}</div>
+          <div class="stat-card-label">Active Instances</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-card-icon" style="background:var(--success-light);">📊</span>
+          </div>
+          <div class="stat-card-value" style="color:var(--success);">{{ adminStats.completed_today || 0 }}</div>
+          <div class="stat-card-label">Completed Today</div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Recent Workflows Table -->
+    <div class="section-title mt-4">Recent Workflows</div>
     <div class="card" *ngIf="userStats?.recent_instances?.length">
-      <div class="card-header">My Workflows</div>
-      <table class="table">
-        <thead><tr><th>Ref</th><th>Title</th><th>Station</th><th>Status</th><th>Updated</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let i of userStats.recent_instances" [routerLink]="['/instances', i.id]" style="cursor:pointer;">
-            <td>{{ i.reference }}</td>
-            <td>{{ i.title }}</td>
-            <td>{{ i.current_station?.name }}</td>
-            <td><span class="badge" [class]="i.status === 'ACTIVE' ? 'badge-info' : 'badge-success'">{{ i.status }}</span></td>
-            <td class="text-sm text-muted">{{ i.updated_at | date:'short' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="card-body-flush">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Title</th>
+              <th>Template</th>
+              <th>Current Station</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let i of userStats.recent_instances" class="clickable" [routerLink]="['/instances', i.id]">
+              <td class="cell-primary">{{ i.reference }}</td>
+              <td>{{ i.title }}</td>
+              <td class="text-sm text-muted">{{ i.template_name }}</td>
+              <td>
+                <span class="badge badge-neutral">{{ i.current_station?.name }}</span>
+              </td>
+              <td>
+                <span class="status-indicator" [class.active]="i.status==='ACTIVE'" [class.completed]="i.status==='COMPLETED'">
+                  {{ i.status }}
+                </span>
+              </td>
+              <td class="text-sm text-muted cell-nowrap">{{ i.updated_at | date:'short' }}</td>
+              <td>
+                <a class="btn btn-ghost btn-sm" [routerLink]="['/instances', i.id]">View →</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="flex gap-1 mt-1" *ngIf="auth.isAdmin">
-      <a class="btn btn-primary" routerLink="/templates/new">+ Create Template</a>
-    </div>
-    <div class="flex gap-1 mt-1" *ngIf="auth.isInitiator">
-      <a class="btn btn-success" routerLink="/instances/new">+ New Instance</a>
+    <!-- Empty State -->
+    <div *ngIf="!userStats?.recent_instances?.length" class="card">
+      <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">Welcome to Workflow</div>
+        <div class="empty-state-desc">
+          <ng-container *ngIf="auth.isInitiator">
+            You haven't started any workflows yet. Create your first instance to get going.
+          </ng-container>
+          <ng-container *ngIf="!auth.isInitiator">
+            No workflows are assigned to you yet. When a workflow reaches your station, it will appear here.
+          </ng-container>
+        </div>
+        <a *ngIf="auth.isInitiator" class="btn btn-primary btn-lg" routerLink="/instances/new">
+          + Create Your First Instance
+        </a>
+      </div>
     </div>
   `,
 })
@@ -89,5 +164,12 @@ export class DashboardComponent implements OnInit {
     if (this.auth.isAdmin) {
       this.api.adminDashboard().subscribe(d => this.adminStats = d);
     }
+  }
+
+  get greeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
   }
 }

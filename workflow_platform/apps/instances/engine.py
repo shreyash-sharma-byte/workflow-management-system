@@ -15,6 +15,8 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import F
 from rest_framework import exceptions
+
+# Import at bottom to avoid circular imports
 from apps.workflows.models import Station, Transition
 from apps.instances.models import (
     WorkflowInstance,
@@ -23,14 +25,13 @@ from apps.instances.models import (
 )
 
 
-class WorkflowEngineError(Exception):
-    """Base exception for engine errors with structured details."""
+class WorkflowEngineError(exceptions.APIException):
+    """Engine validation errors that return proper HTTP status codes."""
     def __init__(self, error_code, message, details=None, status_code=400):
         self.error_code = error_code
-        self.message = message
         self.details = details or {}
+        super().__init__(detail=message, code=error_code)
         self.status_code = status_code
-        super().__init__(message)
 
 
 class WorkflowEngine:

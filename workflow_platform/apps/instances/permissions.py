@@ -37,24 +37,31 @@ class IsInitiator(permissions.BasePermission):
 class IsStationOwner(permissions.BasePermission):
     """
     User belongs to one of the allowed_roles of the current station.
-    Used for task execution and workflow movement.
+    Works with WorkflowInstance (current_station) and TaskExecution (station).
     """
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        # Instance-level check happens in has_object_permission
         return True
 
     def has_object_permission(self, request, view, obj):
-        # obj is expected to be a WorkflowInstance
-        station = obj.current_station
-        allowed_roles = station.allowed_roles.all()
+        # Handle both WorkflowInstance and TaskExecution
+        from apps.instances.models import WorkflowInstance, TaskExecution
+        if isinstance(obj, TaskExecution):
+            station = obj.station
+        elif isinstance(obj, WorkflowInstance):
+            station = obj.current_station
+        else:
+            station = getattr(obj, 'current_station', None) or getattr(obj, 'station', None)
 
+        if not station:
+            return False
+
+        allowed_roles = station.allowed_roles.all()
         if not allowed_roles.exists():
-            return True  # No role restriction — allow all
+            return True
 
         user_roles = set(request.user.groups.values_list('name', flat=True))
         station_roles = set(allowed_roles.values_list('name', flat=True))

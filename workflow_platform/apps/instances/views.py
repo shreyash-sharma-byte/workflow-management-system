@@ -122,7 +122,7 @@ class WorkflowInstanceViewSet(viewsets.ModelViewSet):
             )
         except WorkflowEngineError as e:
             return Response(
-                {'error': e.error_code, 'message': e.message, 'details': e.details},
+                {'error': e.error_code, 'message': str(e), 'details': e.details},
                 status=e.status_code
             )
 
@@ -162,7 +162,7 @@ class WorkflowInstanceViewSet(viewsets.ModelViewSet):
             )
         except WorkflowEngineError as e:
             return Response(
-                {'error': e.error_code, 'message': e.message, 'details': e.details},
+                {'error': e.error_code, 'message': str(e), 'details': e.details},
                 status=e.status_code
             )
 
@@ -255,7 +255,7 @@ class WorkflowInstanceViewSet(viewsets.ModelViewSet):
             )
         except WorkflowEngineError as e:
             return Response(
-                {'error': e.error_code, 'message': e.message},
+                {'error': e.error_code, 'message': str(e)},
                 status=e.status_code
             )
 
@@ -347,7 +347,7 @@ class TaskExecutionViewSet(viewsets.GenericViewSet):
         try:
             engine.start_task(task_exec, request.user)
         except WorkflowEngineError as e:
-            return Response({'error': e.error_code, 'message': e.message}, status=e.status_code)
+            return Response({'error': e.error_code, 'message': str(e)}, status=e.status_code)
         return Response({'id': task_exec.id, 'status': task_exec.status, 'started_at': task_exec.started_at})
 
     @action(detail=True, methods=['post'])
@@ -359,14 +359,14 @@ class TaskExecutionViewSet(viewsets.GenericViewSet):
         engine = WorkflowEngine()
         try:
             engine.submit_task(
-                task_exec=task_exec,
+                task_execution=task_exec,
                 user=request.user,
                 response_data=serializer.validated_data.get('response_data', {}),
                 remarks=serializer.validated_data.get('remarks', ''),
             )
         except WorkflowEngineError as e:
             return Response(
-                {'error': e.error_code, 'message': e.message, 'details': e.details},
+                {'error': e.error_code, 'message': str(e), 'details': e.details},
                 status=e.status_code
             )
 

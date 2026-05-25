@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   UserProfile, Role, WorkflowTemplate, TemplateVersion,
   Station, TaskDefinition, TransitionDetail,
@@ -17,7 +18,11 @@ export class ApiService {
 
   // ── Auth ────────────────────────────────────────────
   me(): Observable<UserProfile> { return this.http.get<UserProfile>(`${BASE}/auth/me/`); }
-  roles(): Observable<Role[]> { return this.http.get<Role[]>(`${BASE}/roles/`); }
+  roles(): Observable<Role[]> {
+    return this.http.get<PaginatedResponse<Role>>(`${BASE}/auth/roles/`).pipe(
+      map(r => r.results)
+    );
+  }
 
   // ── Dashboard ───────────────────────────────────────
   adminDashboard(): Observable<AdminDashboard> { return this.http.get<AdminDashboard>(`${BASE}/dashboard/admin/`); }
@@ -35,6 +40,9 @@ export class ApiService {
   }
   updateTemplate(id: number, data: any): Observable<WorkflowTemplate> {
     return this.http.put<WorkflowTemplate>(`${BASE}/templates/${id}/`, data);
+  }
+  deleteTemplate(id: number): Observable<void> {
+    return this.http.delete<void>(`${BASE}/templates/${id}/`);
   }
   publishTemplate(id: number, notes: string): Observable<any> {
     return this.http.post(`${BASE}/templates/${id}/publish/`, { change_notes: notes });

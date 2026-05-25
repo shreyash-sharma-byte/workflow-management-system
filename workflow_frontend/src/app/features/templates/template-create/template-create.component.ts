@@ -6,8 +6,9 @@ import { WorkflowTemplate } from '../../../shared/models/types';
 @Component({
   selector: 'app-template-create',
   template: `
-    <h2 style="margin-bottom:1.5rem;">Create New Workflow Template</h2>
-    <div class="card" style="max-width:600px;">
+    <h2 class="mb-2">Create New Workflow Template</h2>
+    <div class="card max-w-md">
+      <div class="card-body">
       <div class="form-group">
         <label class="form-label">Template Name *</label>
         <input class="form-input" [(ngModel)]="name" placeholder="e.g., SDLC Workflow">
@@ -26,6 +27,7 @@ import { WorkflowTemplate } from '../../../shared/models/types';
       </div>
       <div *ngIf="created" class="mt-1" style="color:var(--success);">
         ✅ Template created! <a [routerLink]="['/templates', created.id]">Open it →</a>
+      </div>
       </div>
     </div>
   `,

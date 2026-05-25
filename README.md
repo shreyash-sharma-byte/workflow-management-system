@@ -21,11 +21,11 @@ A full-stack enterprise workflow execution platform where organizations can crea
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Angular 17, TypeScript, Keycloak JS adapter |
-| Backend | Django 4.2, Django REST Framework |
-| Auth | Keycloak 25 with JWT (RS256) |
-| Database | PostgreSQL 16 |
-| DevOps | Docker, Docker Compose |
+| Frontend | Angular 17, TypeScript, Keycloak JS adapter, Premium Design System |
+| Backend | Django 4.2, Django REST Framework, 40+ REST APIs |
+| Auth | Keycloak 25 with JWT (RS256), automatic user provisioning |
+| Database | PostgreSQL 16, 11 models, append-only audit trail |
+| DevOps | Docker, Docker Compose, one-command launch |
 
 ---
 
@@ -69,15 +69,17 @@ Wait 60 seconds for all services to initialize, then open:
 
 ### Phase 1 ✅
 
-- **Keycloak SSO** — JWT authentication with automatic user provisioning and role sync
-- **RBAC** — 9 roles, station-level permissions, admin/operator/auditor separation
-- **Workflow Templates** — Create reusable templates with visual station builder
-- **Stations & Transitions** — START/NORMAL/END stations with directional edges
-- **Workflow Engine** — Central orchestration with 5-step validation
-- **Workflow Instances** — Create from templates, track progress, move through stations
-- **Immutable Audit Log** — Append-only history with full attribution
-- **Document Trail** — File uploads tracked across all stations
-- **Angular Dashboard** — Role-based views (admin stats, operator workload)
+- **Keycloak SSO** — JWT auth with auto user provisioning, role sync on every request
+- **RBAC** — 9 roles, station-level permissions, admin/initiator/operator/auditor separation
+- **Workflow Templates** — Create reusable templates with visual station & transition builders
+- **Station Roles** — Assign roles per station; only authorized users can act
+- **Custom Tasks** — APPROVAL, FORM (visual field builder), DOCUMENT, CONFIRMATION (checklist)
+- **Workflow Engine** — Central orchestration: 5-step validation, optimistic locking, transactional moves
+- **Workflow Instances** — Create from templates, progress tracker, execute tasks, move through stations
+- **Immutable Audit Log** — Append-only history with full attribution, exportable
+- **Document Trail** — File upload/download per instance, tracked across all stations
+- **Premium UI** — Clean design system with card layouts, modals, progress tracker, empty states
+- **Angular Dashboard** — Role-based views (admin stats, operator workload, BA/PM tracking)
 
 ### Phase 2 (Planned)
 

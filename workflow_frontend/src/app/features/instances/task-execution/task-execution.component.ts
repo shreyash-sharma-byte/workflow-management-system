@@ -5,13 +5,16 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
 @Component({
   selector: 'app-task-execution',
   template: `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;" (click)="close()">
-      <div class="card" style="width:500px;max-height:80vh;overflow-y:auto;" (click)="$event.stopPropagation()">
-        <div class="card-header">
+    <div class="modal-backdrop" (click)="close()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
           {{ task.task_definition.name }}
-          <button class="btn btn-outline btn-sm" (click)="close()">✕</button>
+          <button class="btn btn-ghost btn-sm" (click)="close()">✕</button>
         </div>
-        <p class="text-muted text-sm mb-1">Type: {{ task.task_definition.task_type }} | {{ task.task_definition.is_required ? 'Required' : 'Optional' }}</p>
+        <div class="modal-body">
+        <p class="text-muted text-sm mb-1">
+          {{ task.task_definition.task_type }} · {{ task.task_definition.is_required ? 'Required' : 'Optional' }}
+        </p>
 
         <!-- APPROVAL -->
         <ng-container *ngIf="task.task_definition.task_type === 'APPROVAL'">
@@ -23,11 +26,10 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
           </div>
         </ng-container>
 
-        <!-- FORM (Dynamic JSON) -->
+        <!-- FORM (Dynamic) -->
         <ng-container *ngIf="task.task_definition.task_type === 'FORM'">
           <div class="form-group" *ngFor="let field of formFields">
             <label class="form-label">{{ field.label }} <span *ngIf="field.required" style="color:var(--danger);">*</span></label>
-
             <ng-container [ngSwitch]="field.type">
               <input *ngSwitchCase="'text'" class="form-input" [(ngModel)]="response[field.key]" [placeholder]="field.placeholder || ''">
               <input *ngSwitchCase="'number'" class="form-input" type="number" [(ngModel)]="response[field.key]">
@@ -46,10 +48,10 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
           </div>
         </ng-container>
 
-        <!-- CONFIRMATION (Checklist) -->
+        <!-- CONFIRMATION -->
         <ng-container *ngIf="task.task_definition.task_type === 'CONFIRMATION'">
-          <div class="form-group" *ngFor="let item of checklistItems">
-            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;padding:0.5rem 0;">
+          <div *ngFor="let item of checklistItems" style="padding:0.5rem 0;border-bottom:1px solid var(--border-light);">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.875rem;">
               <input type="checkbox" [(ngModel)]="response[item.key]">
               <span>{{ item.label }} <span *ngIf="item.required" style="color:var(--danger);">*</span></span>
             </label>
@@ -58,24 +60,24 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
 
         <!-- DOCUMENT -->
         <ng-container *ngIf="task.task_definition.task_type === 'DOCUMENT'">
-          <p class="text-muted text-sm mb-1">Upload documents using the Documents tab before submitting this task.</p>
-          <div *ngIf="task.documents_info?.length" class="text-sm">
-            Attached: {{ task.documents_info.length }} file(s)
+          <p class="text-muted text-sm">Upload documents using the Documents tab, then submit this task.</p>
+          <div *ngIf="task.documents_info?.length" class="text-sm mt-1">
+            📎 {{ task.documents_info.length }} file(s) attached
           </div>
         </ng-container>
 
-        <!-- Remarks -->
         <div class="form-group mt-1">
           <label class="form-label">Remarks</label>
-          <textarea class="form-textarea" [(ngModel)]="remarks" placeholder="Add any notes..."></textarea>
+          <textarea class="form-textarea" [(ngModel)]="remarks" placeholder="Any notes..."></textarea>
         </div>
 
-        <div class="flex gap-1">
-          <button class="btn btn-primary" (click)="submit()">Submit</button>
-          <button class="btn btn-outline" (click)="saveDraft()">Save Draft</button>
-          <button class="btn btn-outline" (click)="close()">Cancel</button>
+        <div *ngIf="error" class="text-sm" style="color:var(--danger);margin-bottom:0.5rem;">{{ error }}</div>
         </div>
-        <div *ngIf="error" class="mt-1" style="color:var(--danger);">{{ error }}</div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="close()">Cancel</button>
+          <button class="btn btn-ghost" (click)="saveDraft()">Save Draft</button>
+          <button class="btn btn-primary" (click)="submit()">Submit</button>
+        </div>
       </div>
     </div>
   `,
