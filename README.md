@@ -87,12 +87,34 @@ Wait 60 seconds for all services to initialize, then open:
 
 ![Instance Detail](docs/screenshots/05-instance-detail.png)
 
-### Phase 2 (Planned)
+### Phase 2 ✅ (Implemented)
 
-- Dynamic task forms from JSON schema
-- CONFIRMATION checklists, APPROVAL flows, DOCUMENT requirements
-- Email notifications on workflow movement
-- Advanced filtering and reporting
+- **Dynamic Task Forms** — FORM fields from JSON schema, CONFIRMATION checklists, APPROVAL flows, DOCUMENT uploads
+- **Email Notifications** — SMTP support (Gmail), station-level notifications on workflow movement
+- **Public Instance Sharing** — UUID-token URLs for external stakeholder access
+- **In-App Notifications** — Bell popover with unread count, full notifications page with filters
+
+### Phase 3 (Planned)
+
+---
+
+## 🔒 Security
+
+| Measure | Implementation |
+|---------|---------------|
+| **SSO Authentication** | Keycloak 25 with JWT RS256, token validation on every request |
+| **Role-Based Access** | 9 realm roles, station-level permissions, admin/operator/auditor separation |
+| **Rate Limiting** | ScopedRateThrottle on auth endpoints (login, token refresh) |
+| **CORS Hardening** | Whitelist-only origins (`CORS_ALLOWED_ORIGINS`), no wildcard |
+| **Security Headers** | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection` |
+| **Admin URL Obfuscation** | Django admin at `control-panel/` instead of default `/admin/` |
+| **Input Sanitization** | `SanitizeInputMiddleware` strips HTML/scripts from all text fields |
+| **File Upload Validation** | MIME type whitelist, 1 MB size cap (`ALLOWED_UPLOAD_TYPES`, `MAX_UPLOAD_SIZE`) |
+| **Optimistic Locking** | Prevents concurrent workflow modifications via version checks |
+| **Immutable Audit Trail** | Append-only history, no edits or deletes possible |
+| **Public Token Security** | UUID v4 tokens (unguessable) for public instance sharing |
+| **Error Resilience** | Global error interceptor — no stack traces leaked to UI |
+| **Credential Hygiene** | No secrets in codebase — all credentials via `.env` (gitignored) |
 
 ---
 
