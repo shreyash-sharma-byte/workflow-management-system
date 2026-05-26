@@ -76,6 +76,18 @@ import { WorkflowInstance } from '../../../shared/models/types';
       </div>
     </div>
 
+    <!-- Pagination -->
+    <div class="flex justify-between items-center mt-3" *ngIf="totalPages > 1">
+      <span class="text-sm text-muted">{{ totalCount }} total · page {{ page }} of {{ totalPages }}</span>
+      <div class="flex gap-1">
+        <button class="btn btn-outline btn-xs" [disabled]="page <= 1" (click)="goPage(page - 1)">← Prev</button>
+        <button *ngFor="let p of pagesArray()" class="btn btn-xs"
+                [class.btn-primary]="p === page" [class.btn-outline]="p !== page"
+                (click)="goPage(p)">{{ p }}</button>
+        <button class="btn btn-outline btn-xs" [disabled]="page >= totalPages" (click)="goPage(page + 1)">Next →</button>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div class="card" *ngIf="instances.length === 0">
       <div class="empty-state">
@@ -102,21 +114,44 @@ export class InstanceListComponent implements OnInit {
   instances: WorkflowInstance[] = [];
   statusFilter = '';
   search = '';
+  totalCount = 0;
+  page = 1;
+  pageSize = 20;
+  totalPages = 1;
+  loading = false;
 
   constructor(public auth: AuthService, private api: ApiService) {}
 
   ngOnInit(): void { this.load(); }
 
   load(): void {
-    const params: any = {};
+    const params: any = { page: this.page, page_size: this.pageSize };
     if (this.statusFilter) params.status = this.statusFilter;
     if (this.search) params.search = this.search;
-    this.api.listInstances(params).subscribe(r => this.instances = r.results);
+    this.loading = true;
+    this.api.listInstances(params).subscribe(r => {
+      this.instances = r.results;
+      this.totalCount = r.count;
+      this.totalPages = Math.ceil(r.count / this.pageSize);
+      this.loading = false;
+    });
+  }
+
+  goPage(p: number): void {
+    this.page = p;
+    this.load();
   }
 
   clearFilters(): void {
     this.statusFilter = '';
     this.search = '';
+    this.page = 1;
     this.load();
+  }
+
+  pagesArray(): number[] {
+    const pages: number[] = [];
+    for (let i = 1; i <= this.totalPages; i++) pages.push(i);
+    return pages;
   }
 }

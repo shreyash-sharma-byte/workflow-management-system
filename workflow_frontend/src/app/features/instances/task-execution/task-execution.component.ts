@@ -60,9 +60,25 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
 
         <!-- DOCUMENT -->
         <ng-container *ngIf="task.task_definition.task_type === 'DOCUMENT'">
-          <p class="text-muted text-sm">Upload documents using the Documents tab, then submit this task.</p>
-          <div *ngIf="task.documents_info?.length" class="text-sm mt-1">
-            📎 {{ task.documents_info.length }} file(s) attached
+          <p class="text-sm text-muted mb-2">Upload the required files for this task.</p>
+          <!-- Upload zone -->
+          <label class="file-upload-zone" style="padding:var(--space-4);margin-bottom:var(--space-2);">
+            <span class="text-sm text-muted">{{ selectedFile ? selectedFile.name : 'Click to choose a file... (max 1 MB)' }}</span>
+            <input type="file" (change)="onFileSelected($event)" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+          </label>
+          <div class="flex gap-2 mb-2">
+            <input class="form-input" [(ngModel)]="fileDesc" placeholder="File description" style="flex:1;">
+            <button class="btn btn-primary btn-sm" (click)="uploadFile()" [disabled]="!selectedFile || uploading">
+              {{ uploading ? 'Uploading...' : 'Upload' }}
+            </button>
+          </div>
+          <div *ngIf="uploadedDocs.length > 0" class="mb-2">
+            <div *ngFor="let d of uploadedDocs" class="text-sm" style="padding:4px 0;">
+              📎 {{ d.original_filename }}
+            </div>
+          </div>
+          <div *ngIf="task.documents_info?.length" class="text-sm mb-2">
+            Previously attached: {{ task.documents_info.length }} file(s)
           </div>
         </ng-container>
 
@@ -90,6 +106,10 @@ export class TaskExecutionComponent {
   response: any = {};
   remarks = '';
   error = '';
+  selectedFile: File | null = null;
+  fileDesc = '';
+  uploading = false;
+  uploadedDocs: any[] = [];
 
   constructor(private api: ApiService) {}
 
@@ -131,4 +151,32 @@ export class TaskExecutionComponent {
   }
 
   close(): void { this.closed.emit(); }
+
+  onFileSelected(event: any): void {
+    const file = event.target?.files?.[0] || null;
+    if (file && file.size > 1_048_576) {
+      this.error = `File "${file.name}" is ${(file.size / 1_048_576).toFixed(1)} MB. Max 1 MB.`;
+      return;
+    }
+    this.selectedFile = file;
+    this.error = '';
+  }
+
+  uploadFile(): void {
+    if (!this.selectedFile) return;
+    this.uploading = true;
+    this.error = '';
+    this.api.uploadDocument(this.instanceId, this.selectedFile, this.fileDesc, this.task.id).subscribe({
+      next: (doc: any) => {
+        this.uploadedDocs.push(doc);
+        this.selectedFile = null;
+        this.fileDesc = '';
+        this.uploading = false;
+      },
+      error: (e) => {
+        this.error = e.error?.message || 'Upload failed';
+        this.uploading = false;
+      }
+    });
+  }
 }

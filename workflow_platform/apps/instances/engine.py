@@ -14,7 +14,9 @@ Usage:
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import F
+from django.contrib.auth.models import Group
 from rest_framework import exceptions
+import uuid
 
 # Import at bottom to avoid circular imports
 from apps.workflows.models import Station, Transition
@@ -92,6 +94,7 @@ class WorkflowEngine:
                 initiated_by=user,
                 current_owner=user,
                 version=1,
+                public_token=uuid.uuid4(),
             )
 
             # Create history
@@ -109,6 +112,15 @@ class WorkflowEngine:
 
             # Auto-create PENDING task executions for all tasks at START station
             self._create_pending_tasks(instance, start_station)
+
+        # Notify: instance assigned
+        self._notify_station_users(
+            instance, start_station,
+            notif_type='INSTANCE_ASSIGNED',
+            title=f'New instance: {instance.title}',
+            message=f'Workflow {instance.reference} has been created and is at "{start_station.name}".',
+            link=f'/instances/{instance.id}',
+        )
 
         return instance
 
@@ -280,6 +292,16 @@ class WorkflowEngine:
             # Auto-create PENDING tasks at the new station
             new_tasks = self._create_pending_tasks(instance, to_station)
 
+        # Notify users at the new station
+        action_text = 'completed' if to_station.is_end else f'moved to "{to_station.name}"'
+        self._notify_station_users(
+            instance, to_station,
+            notif_type='INSTANCE_COMPLETED' if to_station.is_end else 'INSTANCE_MOVED',
+            title=f'{instance.reference}: {action_text}',
+            message=f'Workflow {instance.reference} was moved from "{from_station.name}" to "{to_station.name}" by {user.get_full_name() or user.username}.',
+            link=f'/instances/{instance.id}',
+        )
+
         return {
             'instance': instance,
             'history_entry': history,
@@ -304,6 +326,138 @@ class WorkflowEngine:
 
         return new_tasks
 
+    # ── Notification Helpers ─────────────────────────
+
+    def _notify_station_users(self, instance, station, notif_type, title, message, link):
+        """Create notifications for all users who have a role at this station."""
+        from apps.notifications.models import Notification
+        from apps.accounts.models import User
+
+        allowed_roles = station.allowed_roles.all()
+        if not allowed_roles.exists():
+            # No station roles — notify the initiator as fallback
+            self._notify_and_email_user(
+                instance.initiated_by, instance, station,
+                notif_type=notif_type, title=title, message=message, link=link,
+            )
+            return
+
+        # Find all users who belong to at least one of the station's roles
+        users = User.objects.filter(
+            groups__in=allowed_roles
+        ).distinct()
+
+        notifications = [
+            Notification(
+                recipient=user,
+                notification_type=notif_type,
+                title=title,
+                message=message,
+                link=link,
+                instance_id=instance.id,
+            )
+            for user in users
+        ]
+        Notification.objects.bulk_create(notifications)
+
+        # Also send email for important events
+        if notif_type in ('INSTANCE_ASSIGNED', 'INSTANCE_COMPLETED', 'INSTANCE_CANCELLED'):
+            self._email_station_users(users, instance, station, notif_type, title, message, link)
+
+    def _email_station_users(self, users, instance, station, notif_type, title, message, link):
+        """Send email notifications for important workflow events."""
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        subject = f'[{instance.reference}] {title}'
+        body = f"""
+Workflow: {instance.reference} — {instance.title}
+Status: {instance.status}
+Station: {station.name}
+Template: {instance.template_version.template.name}
+
+{message}
+
+View: {link}
+
+---
+Workflow Management System
+        """.strip()
+
+        recipient_emails = [u.email for u in users if u.email]
+        if not recipient_emails:
+            return
+
+        # Dev override: send all emails to a single test address
+        if hasattr(settings, 'DEV_EMAIL_OVERRIDE') and settings.DEV_EMAIL_OVERRIDE:
+            recipient_emails = [settings.DEV_EMAIL_OVERRIDE]
+
+        try:
+            send_mail(
+                subject=subject,
+                message=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=recipient_emails,
+                fail_silently=False,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f'Email failed: {e}')
+
+    def _notify_and_email_user(self, user, instance, station, notif_type, title, message, link):
+        """Send notification and email to a single user."""
+        from apps.notifications.models import Notification
+
+        Notification.objects.create(
+            recipient=user,
+            notification_type=notif_type,
+            title=title,
+            message=message,
+            link=link,
+            instance_id=instance.id,
+        )
+
+        if user.email:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            subject = f'[{instance.reference}] {title}'
+            body = f"""Workflow: {instance.reference} — {instance.title}
+Status: {instance.status}
+{message}
+
+View: {link}
+---
+Workflow Management System""".strip()
+            # Dev override
+            to_email = getattr(settings, 'DEV_EMAIL_OVERRIDE', None) or user.email
+            try:
+                send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=False)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f'Email failed: {e}')
+
+    def _validate_task_permission(self, task_execution: TaskExecution, user):
+        """
+        Check user has a role allowed for this specific task.
+        If task has no allowed_roles, inherits station's allowed_roles.
+        """
+        td = task_execution.task_definition
+        task_roles = td.allowed_roles.all()
+
+        if task_roles.exists():
+            # Task has specific role requirements — check against those
+            user_roles = set(user.groups.values_list('name', flat=True))
+            task_role_names = set(task_roles.values_list('name', flat=True))
+
+            if not user_roles.intersection(task_role_names):
+                raise WorkflowEngineError(
+                    'forbidden',
+                    f'You do not have permission to execute "{td.name}". '
+                    f'Required roles: {", ".join(sorted(task_role_names))}. '
+                    f'Your roles: {", ".join(sorted(user_roles)) if user_roles else "none"}.',
+                    status_code=403
+                )
+
     # ── Task Execution Helpers ──────────────────────────
 
     def start_task(self, task_execution: TaskExecution, user):
@@ -313,6 +467,7 @@ class WorkflowEngine:
                 'task_not_pending',
                 f'Task is already {task_execution.status}.'
             )
+        self._validate_task_permission(task_execution, user)
         task_execution.status = TaskExecution.ExecutionStatus.IN_PROGRESS
         task_execution.started_at = timezone.now()
         task_execution.executed_by = user
@@ -336,6 +491,8 @@ class WorkflowEngine:
                 'task_already_completed',
                 'This task is already completed.'
             )
+
+        self._validate_task_permission(task_execution, user)
 
         # Validate response data based on task type
         self._validate_task_response(task_execution, response_data)
@@ -383,7 +540,8 @@ class WorkflowEngine:
             fields = td.task_config.get('fields', [])
             missing = []
             for field in fields:
-                if field.get('required') and not response_data.get(field['key']):
+                val = response_data.get(field['key'])
+                if field.get('required') and (val is None or (isinstance(val, str) and not val.strip())):
                     missing.append(field['key'])
             if missing:
                 raise WorkflowEngineError(
@@ -431,6 +589,15 @@ class WorkflowEngine:
                 from_station=instance.current_station,
                 remarks=remarks,
             )
+
+        # Notify initiator on cancellation
+        self._notify_and_email_user(
+            instance.initiated_by, instance, instance.current_station,
+            notif_type='INSTANCE_CANCELLED',
+            title=f'{instance.reference} cancelled',
+            message=f'Workflow {instance.reference} was cancelled by {user.get_full_name() or user.username}.',
+            link=f'/instances/{instance.id}',
+        )
 
         return instance, history
 

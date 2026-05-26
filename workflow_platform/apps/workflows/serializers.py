@@ -33,11 +33,32 @@ class RoleNestedSerializer(serializers.ModelSerializer):
 # ── Task Definition ─────────────────────────────────────────
 
 class TaskDefinitionSerializer(serializers.ModelSerializer):
+    allowed_roles = RoleNestedSerializer(many=True, read_only=True)
+    allowed_role_ids = serializers.PrimaryKeyRelatedField(
+        source='allowed_roles', queryset=Group.objects.all(), many=True,
+        write_only=True, required=False
+    )
+
     class Meta:
         model = TaskDefinition
         fields = ['id', 'name', 'description', 'task_type', 'is_required',
-                  'order', 'task_config', 'created_at']
+                  'order', 'task_config', 'allowed_roles', 'allowed_role_ids',
+                  'created_at']
         read_only_fields = ['id', 'created_at']
+
+    def create(self, validated_data):
+        role_ids = validated_data.pop('allowed_roles', [])
+        task = super().create(validated_data)
+        if role_ids:
+            task.allowed_roles.set(role_ids)
+        return task
+
+    def update(self, instance, validated_data):
+        role_ids = validated_data.pop('allowed_roles', None)
+        task = super().update(instance, validated_data)
+        if role_ids is not None:
+            task.allowed_roles.set(role_ids)
+        return task
 
 
 # ── Station ─────────────────────────────────────────────────

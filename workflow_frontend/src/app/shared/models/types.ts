@@ -92,6 +92,7 @@ export interface TaskDefinition {
   is_required: boolean;
   order: number;
   task_config: TaskConfig;
+  allowed_roles?: Role[];
 }
 
 export interface TaskConfig {
@@ -143,6 +144,7 @@ export interface WorkflowInstance {
   user_permissions?: UserPermissions;
   progress?: InstanceProgress;
   station_timeline?: TimelineEntry[];
+  public_token?: string;
   version: number;
   created_at: string;
   updated_at: string;

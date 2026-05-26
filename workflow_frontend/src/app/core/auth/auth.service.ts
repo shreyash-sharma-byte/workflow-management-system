@@ -31,6 +31,18 @@ export class AuthService {
     return this.hasAnyRole(['ADMIN', 'PM_TEAM', 'PM_MANAGER']);
   }
 
+  get isAuthenticated(): boolean {
+    return this.keycloak.isLoggedIn();
+  }
+
+  login(): void {
+    this.keycloak.login();
+  }
+
+  get userName(): string {
+    return this.username;
+  }
+
   get token(): string {
     return this.keycloak.getKeycloakInstance().token ?? '';
   }

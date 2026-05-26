@@ -19,6 +19,12 @@ class WorkflowInstance(models.Model):
     current_station = models.ForeignKey(Station, on_delete=models.PROTECT, related_name='active_instances')
     instance_data = models.JSONField(default=dict, blank=True)
 
+    # Public access token — shareable link to this instance only
+    public_token = models.UUIDField(
+        null=True, unique=True, db_index=True,
+        help_text='Shareable token for standalone instance view. Validates station roles.'
+    )
+
     # Optimistic locking
     version = models.PositiveIntegerField(default=1)
 

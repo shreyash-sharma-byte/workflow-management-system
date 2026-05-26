@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 from django.http import FileResponse
 
 from apps.instances.models import WorkflowInstance, WorkflowInstanceHistory
@@ -48,20 +50,38 @@ class DocumentViewSet(viewsets.GenericViewSet):
                 'tags': d.tags,
                 'task_execution_id': d.task_execution_id,
                 'uploaded_at': d.uploaded_at,
-                'download_url': f'/api/v1/instances/{instance_pk}/documents/{d.id}/download/',
+                'download_url': request.build_absolute_uri(
+                f'/api/v1/instances/{instance_pk}/documents/{d.id}/download/'
+            ),
             })
 
         if page is not None:
             return self.get_paginated_response(results)
         return Response({'count': qs.count(), 'results': results})
 
-    @action(detail=False, methods=['post'], url_path='upload')
+    @action(detail=False, methods=['post'], url_path='upload', throttle_classes=[ScopedRateThrottle])
     def upload(self, request, instance_pk=None):
         """Upload a document to an instance."""
+        request.throttle_scope = 'upload'
         instance = get_object_or_404(WorkflowInstance, id=instance_pk)
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
             return Response({'error': 'no_file', 'message': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1 MB limit
+        if uploaded_file.size > 1_048_576:
+            return Response({
+                'error': 'file_too_large',
+                'message': f'File size {_format_size(uploaded_file.size)} exceeds the 1 MB limit.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate MIME type
+        content_type = uploaded_file.content_type or 'application/octet-stream'
+        if content_type not in settings.ALLOWED_UPLOAD_TYPES:
+            return Response({
+                'error': 'invalid_file_type',
+                'message': f'File type "{content_type}" is not allowed. Allowed: PDF, PNG, JPG, DOC, DOCX.',
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         description = request.data.get('description', '')
         tags_str = request.data.get('tags', '')

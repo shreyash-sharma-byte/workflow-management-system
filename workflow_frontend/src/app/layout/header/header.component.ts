@@ -34,10 +34,7 @@ interface BreadcrumbSegment {
         </button>
 
         <!-- Notifications -->
-        <button class="header-action-btn" data-tooltip="Notifications" routerLink="/notifications">
-          <span style="font-size:1.1rem;">🔔</span>
-          <span class="badge-dot" *ngIf="unreadCount > 0"></span>
-        </button>
+        <app-notification-popover></app-notification-popover>
 
         <!-- User Menu -->
         <div class="flex items-center gap-2">

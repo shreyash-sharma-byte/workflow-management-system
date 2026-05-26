@@ -24,5 +24,19 @@ urlpatterns = [
     path('instances/<int:instance_pk>/tasks/<int:pk>/save-draft/',
          views.TaskExecutionViewSet.as_view({'post': 'save_draft'}),
          name='instance-task-save-draft'),
+
+    # ── Public Instance Views (micro-frontend via token) ──
+    path('public/instances/<uuid:token>/',
+         views.PublicInstanceView.as_view(),
+         name='public-instance-detail'),
+    path('public/instances/<uuid:token>/tasks/',
+         views.PublicInstanceTasksView.as_view(),
+         name='public-instance-tasks'),
+    path('public/instances/<uuid:token>/tasks/<int:task_pk>/<str:action>/',
+         views.PublicInstanceTaskActionView.as_view(),
+         name='public-instance-task-action'),
+    path('public/instances/<uuid:token>/move/',
+         views.PublicInstanceMoveView.as_view(),
+         name='public-instance-move'),
 ]
 

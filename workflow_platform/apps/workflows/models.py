@@ -156,6 +156,14 @@ class TaskDefinition(models.Model):
     is_required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 
+    # Roles allowed to execute this task (subset of station.allowed_roles)
+    # If empty, inherits station's allowed_roles — any station actor can execute
+    allowed_roles = models.ManyToManyField(
+        'auth.Group', blank=True,
+        related_name='executable_tasks',
+        help_text='Subset of station roles. If blank, any station role can execute.'
+    )
+
     # JSON configuration — drives dynamic form rendering
     # See API-Design.md Section 5 for full schema per task type
     task_config = models.JSONField(default=dict, blank=True)

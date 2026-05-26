@@ -2,6 +2,8 @@
 
 A full-stack enterprise workflow execution platform where organizations can create reusable workflow templates, configure stations with role-based access, execute workflow instances, and maintain complete immutable audit trails.
 
+> 🎬 **[Demo SOP with 10 screenshots →](DEMO.md)**
+
 ---
 
 ## 🏗️ Architecture
@@ -63,6 +65,8 @@ Wait 60 seconds for all services to initialize, then open:
 
 > 📋 [Full seed user list →](SEED_USERS.md)
 
+![Dashboard](docs/screenshots/01-dashboard.png)
+
 ---
 
 ## ✨ Features
@@ -80,6 +84,8 @@ Wait 60 seconds for all services to initialize, then open:
 - **Document Trail** — File upload/download per instance, tracked across all stations
 - **Premium UI** — Clean design system with card layouts, modals, progress tracker, empty states
 - **Angular Dashboard** — Role-based views (admin stats, operator workload, BA/PM tracking)
+
+![Instance Detail](docs/screenshots/05-instance-detail.png)
 
 ### Phase 2 (Planned)
 
@@ -126,6 +132,8 @@ Allowed Roles: QA_TEAM, QA_MANAGER
 → User "raj" (QA_TEAM) can execute tasks & move
 → User "vikram" (DEV_TEAM) gets 403 Forbidden
 ```
+
+![Template Detail](docs/screenshots/03-template-detail.png)
 
 ---
 
@@ -201,6 +209,8 @@ workflow-management-system/
 | `User` | Extended Django user | Mutable |
 
 > 📋 [Full ORM design →](ORM-Design.md)
+
+![Audit Log](docs/screenshots/07-audit-log.png)
 
 ---
 

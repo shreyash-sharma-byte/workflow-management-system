@@ -1,30 +1,31 @@
 from django.db import models
-from apps.instances.models import WorkflowInstance
 
 
 class Notification(models.Model):
-    """Email notification record (Phase 2)."""
+    """In-app notification for workflow events."""
     class NotificationType(models.TextChoices):
-        WORKFLOW_MOVED = 'WORKFLOW_MOVED', 'Workflow Moved'
-        TASK_ASSIGNED = 'TASK_ASSIGNED', 'Task Assigned'
+        INSTANCE_ASSIGNED = 'INSTANCE_ASSIGNED', 'Instance Assigned'
+        TASK_READY = 'TASK_READY', 'Task Ready'
         TASK_COMPLETED = 'TASK_COMPLETED', 'Task Completed'
+        INSTANCE_MOVED = 'INSTANCE_MOVED', 'Instance Moved'
         INSTANCE_COMPLETED = 'INSTANCE_COMPLETED', 'Instance Completed'
-        INSTANCE_BLOCKED = 'INSTANCE_BLOCKED', 'Instance Blocked'
+        INSTANCE_CANCELLED = 'INSTANCE_CANCELLED', 'Instance Cancelled'
 
-    instance = models.ForeignKey(WorkflowInstance, on_delete=models.CASCADE, related_name='notifications')
-    notification_type = models.CharField(max_length=30, choices=NotificationType.choices)
     recipient = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='notifications')
-    recipient_email = models.EmailField()
-    cc_emails = models.JSONField(default=list, blank=True)
-    subject = models.CharField(max_length=500)
-    body_html = models.TextField()
-    sent = models.BooleanField(default=False)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    error_message = models.TextField(blank=True)
+    notification_type = models.CharField(max_length=30, choices=NotificationType.choices)
+    title = models.CharField(max_length=300)
+    message = models.TextField(blank=True)
+    link = models.CharField(max_length=500, blank=True)  # frontend route e.g. /instances/5
+    instance_id = models.IntegerField(null=True, blank=True)
+    is_read = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['recipient', 'is_read']),
+        ]
 
     def __str__(self):
-        return f"{self.notification_type} → {self.recipient_email}"
+        return f"[{self.notification_type}] {self.title} → {self.recipient.username}"

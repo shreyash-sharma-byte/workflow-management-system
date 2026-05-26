@@ -154,4 +154,46 @@ export class ApiService {
   getDownloadUrl(instanceId: number, docId: number): string {
     return `${BASE}/instances/${instanceId}/documents/${docId}/download/`;
   }
+
+  downloadDocument(instanceId: number, docId: number, filename: string): void {
+    this.http.get(`${BASE}/instances/${instanceId}/documents/${docId}/download/`, {
+      responseType: 'blob',
+    }).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      window.URL.revokeObjectURL(url);
+    });
+  }
+
+  // ── Public Instance (Micro-Frontend) ────────────────
+  getPublicInstance(token: string): Observable<WorkflowInstance> {
+    return this.http.get<WorkflowInstance>(`${BASE}/public/instances/${token}/`);
+  }
+  listPublicInstanceTasks(token: string): Observable<{ station: any; count: number; results: TaskExecution[] }> {
+    return this.http.get<any>(`${BASE}/public/instances/${token}/tasks/`);
+  }
+  startTaskPublic(token: string, taskPk: number): Observable<any> {
+    return this.http.post(`${BASE}/public/instances/${token}/tasks/${taskPk}/start/`, {});
+  }
+  submitTaskPublic(token: string, taskPk: number, responseData: any, remarks: string): Observable<any> {
+    return this.http.post(`${BASE}/public/instances/${token}/tasks/${taskPk}/submit/`, { response_data: responseData, remarks });
+  }
+  movePublic(token: string, toStationId: number, remarks: string): Observable<any> {
+    return this.http.post(`${BASE}/public/instances/${token}/move/`, { to_station_id: toStationId, remarks });
+  }
+
+  // ── Notifications ──────────────────────────────────
+  getUnreadCount(): Observable<{ unread_count: number }> {
+    return this.http.get<{ unread_count: number }>(`${BASE}/notifications/unread-count/`);
+  }
+  getNotifications(params?: any): Observable<{ count: number; unread_count: number; results: any[] }> {
+    return this.http.get<any>(`${BASE}/notifications/`, { params });
+  }
+  markNotificationRead(id: number): Observable<any> {
+    return this.http.post(`${BASE}/notifications/${id}/read/`, {});
+  }
+  markAllNotificationsRead(): Observable<any> {
+    return this.http.post(`${BASE}/notifications/mark-all-read/`, {});
+  }
 }

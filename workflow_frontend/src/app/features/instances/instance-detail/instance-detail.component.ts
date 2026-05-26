@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -10,6 +10,25 @@ import {
 @Component({
   selector: 'app-instance-detail',
   template: `
+    <!-- Loading state -->
+    <div *ngIf="loading" class="flex justify-center items-center p-12">
+      <div style="text-align:center;">
+        <div class="skeleton" style="width:240px;height:24px;margin-bottom:12px;"></div>
+        <div class="skeleton skeleton-text" style="width:180px;"></div>
+        <div class="skeleton skeleton-text" style="width:140px;"></div>
+        <p class="text-sm text-muted mt-4">Loading instance...</p>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error && !loading" class="empty-state">
+      <div class="empty-state-icon">⚠️</div>
+      <p class="empty-state-title">Failed to Load Instance</p>
+      <p class="empty-state-desc">{{ error }}</p>
+      <button class="btn btn-primary" (click)="retry()">Retry</button>
+      <button class="btn btn-outline ml-2" [routerLink]="['/instances']">Back to Instances</button>
+    </div>
+
     <div *ngIf="instance">
       <!-- ═══ HEADER: Reference, Status, Meta ═══ -->
       <div class="flex justify-between items-start mb-4">
@@ -30,7 +49,22 @@ import {
             · {{ instance.created_at | date:'mediumDate' }}
           </p>
         </div>
-        <button class="btn btn-outline btn-sm" [routerLink]="['/instances']">← All Instances</button>
+        <button class="btn btn-outline btn-sm" *ngIf="!standalone" [routerLink]="['/instances']">← All Instances</button>
+      </div>
+
+      <!-- ═══ SHARE LINK ═══ -->
+      <div class="card mb-4" *ngIf="instance.public_token && !standalone" style="border-left:4px solid var(--primary);">
+        <div class="card-body" style="padding:var(--space-3) var(--space-5);">
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold">🔗 Share Link</span>
+            <code style="background:var(--bg-hover);padding:4px 8px;border-radius:4px;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ publicUrl }}
+            </code>
+            <button class="btn btn-outline btn-xs" (click)="copyLink()">{{ copied ? '✓ Copied!' : 'Copy' }}</button>
+            <a class="btn btn-ghost btn-xs" [href]="publicUrl" target="_blank">Open ↗</a>
+          </div>
+          <p class="text-xs text-muted mt-1">Users with the right station roles can access this instance via the link above.</p>
+        </div>
       </div>
 
       <!-- ═══ PROGRESS TRACKER ═══ -->
@@ -202,7 +236,7 @@ import {
               <div class="card-body">
                 <div class="flex gap-2 items-center">
                   <label class="file-upload-zone" style="flex:1;padding:var(--space-3);">
-                    <span class="text-sm text-muted">{{ selectedFile ? selectedFile.name : 'Click to choose a file...' }}</span>
+                    <span class="text-sm text-muted">{{ selectedFile ? selectedFile.name : 'Click to choose a file... (max 1 MB)' }}</span>
                     <input type="file" (change)="onFileSelected($event)" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
                   </label>
                   <input class="form-input" [(ngModel)]="uploadDesc" placeholder="Description" style="width:180px;">
@@ -227,7 +261,7 @@ import {
                       <td><span class="badge badge-neutral badge-sm">{{ d.station.name }}</span></td>
                       <td class="text-sm">{{ d.uploaded_by.full_name }}</td>
                       <td class="text-sm text-muted cell-nowrap">{{ d.uploaded_at | date:'short' }}</td>
-                      <td><a [href]="d.download_url" target="_blank" class="btn btn-ghost btn-sm">Download</a></td>
+                      <td><button class="btn btn-ghost btn-sm" (click)="downloadDocument(d)">Download</button></td>
                     </tr>
                   </tbody>
                 </table>
@@ -250,7 +284,7 @@ import {
                   <tbody>
                     <tr *ngFor="let h of history; let i = index">
                       <td class="text-xs text-muted">{{ rowNumber(i) }}</td>
-                      <td class="text-sm cell-nowrap">{{ h.timestamp | date:'short' }}</td>
+                      <td class="text-sm cell-nowrap">{{ h.timestamp | date:'medium' }}</td>
                       <td><span class="badge badge-info badge-sm">{{ h.action }}</span></td>
                       <td class="text-sm">{{ h.action_by_name }}</td>
                       <td class="text-sm">
@@ -343,7 +377,9 @@ import {
   `,
 })
 export class InstanceDetailComponent implements OnInit {
-  instance?: WorkflowInstance;
+  @Input() instance?: WorkflowInstance;
+  @Input() standalone = false;
+
   tasks: TaskExecution[] = [];
   history: HistoryEntry[] = [];
   documents: DocumentInfo[] = [];
@@ -356,18 +392,72 @@ export class InstanceDetailComponent implements OnInit {
   selectedFile: File | null = null;
   uploadDesc = '';
   uploading = false;
+  copied = false;
+  loading = false;
+  error = '';
+  private lastId?: number;
+
+  get publicUrl(): string {
+    return this.instance?.public_token
+      ? `${window.location.origin}/w/${this.instance.public_token}`
+      : '';
+  }
+
+  copyLink(): void {
+    navigator.clipboard.writeText(this.publicUrl).then(() => {
+      this.copied = true;
+      setTimeout(() => this.copied = false, 2000);
+    });
+  }
 
   constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) {}
 
-  ngOnInit(): void { this.route.params.subscribe(p => this.loadInstance(+p['id'])); }
+  ngOnInit(): void {
+    if (this.instance) {
+      this.onInstanceLoaded(this.instance);
+      return;
+    }
+    this.route.params.subscribe(p => {
+      if (p['id']) {
+        this.lastId = +p['id'];
+        this.loadInstance(+p['id']);
+      }
+    });
+  }
+
+  onInstanceLoaded(i: WorkflowInstance): void {
+    this.canAct = i.user_permissions?.can_execute_tasks ?? false;
+    this.loadTasks(i.id);
+    this.loadDocuments();
+    this.loadHistory();
+    this.loadAllowedTransitions(i.id);
+  }
 
   loadInstance(id: number): void {
-    this.api.getInstance(id).subscribe(i => {
-      this.instance = i;
-      this.canAct = i.user_permissions?.can_execute_tasks ?? false;
-      this.loadTasks(id);
-      this.loadAllowedTransitions(id);
+    this.loading = true;
+    this.error = '';
+    this.instance = undefined;
+    this.api.getInstance(id).subscribe({
+      next: i => {
+        this.instance = i;
+        this.loading = false;
+        this.onInstanceLoaded(i);
+      },
+      error: err => {
+        this.loading = false;
+        if (err.status === 404) {
+          this.error = 'This workflow instance was not found. It may have been deleted or the ID is incorrect.';
+        } else if (err.status === 403) {
+          this.error = 'You do not have permission to view this workflow instance.';
+        } else {
+          this.error = 'Something went wrong while loading this instance. Please try again.';
+        }
+      }
     });
+  }
+
+  retry(): void {
+    if (this.lastId) this.loadInstance(this.lastId);
   }
 
   loadTasks(instanceId: number): void {
@@ -384,6 +474,10 @@ export class InstanceDetailComponent implements OnInit {
 
   loadAllowedTransitions(id: number): void {
     this.api.getAllowedTransitions(id).subscribe(r => this.transitions = r);
+  }
+
+  downloadDocument(d: DocumentInfo): void {
+    if (this.instance) this.api.downloadDocument(this.instance.id, d.id, d.original_filename);
   }
 
   get pendingTasks(): TaskExecution[] {
@@ -461,7 +555,12 @@ export class InstanceDetailComponent implements OnInit {
   }
 
   onFileSelected(event: any): void {
-    this.selectedFile = event.target.files?.[0] || null;
+    const file = event.target.files?.[0] || null;
+    if (file && file.size > 1_048_576) {
+      alert(`File "${file.name}" is ${(file.size / 1_048_576).toFixed(1)} MB. Maximum allowed is 1 MB.`);
+      return;
+    }
+    this.selectedFile = file;
   }
 
   uploadDocument(): void {

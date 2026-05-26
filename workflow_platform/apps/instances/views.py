@@ -399,3 +399,159 @@ class TaskExecutionViewSet(viewsets.GenericViewSet):
         task_exec.save()
 
         return Response({'id': task_exec.id, 'status': task_exec.status, 'message': 'Draft saved'})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Public Instance View — standalone micro-frontend access via token
+# ═══════════════════════════════════════════════════════════════
+
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+
+
+class PublicInstanceView(APIView):
+    """
+    Standalone instance view accessed via public_token.
+    No admin chrome — just the workflow instance with role-based access control.
+    URL: /api/v1/public/instances/<token>/
+    """
+    permission_classes = [AllowAny]  # We validate manually
+
+    def get(self, request, token):
+        instance = get_object_or_404(WorkflowInstance.objects.select_related(
+            'template_version__template', 'current_station', 'initiated_by', 'current_owner'
+        ), public_token=token)
+
+        # Require authentication
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'authentication_required',
+                 'message': 'Please log in to view this workflow instance.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Check access: user must have role at current station OR be initiator OR admin
+        user_roles = set(request.user.groups.values_list('name', flat=True))
+        station_roles = set(instance.current_station.allowed_roles.values_list('name', flat=True))
+        is_initiator = (request.user.id == instance.initiated_by_id)
+        is_admin = 'ADMIN' in user_roles
+
+        has_access = is_admin or is_initiator
+        if station_roles:
+            has_access = has_access or bool(user_roles.intersection(station_roles))
+        else:
+            has_access = True  # No station roles = open to all authenticated
+
+        if not has_access:
+            return Response({
+                'error': 'access_denied',
+                'message': f'You do not have permission to view this workflow instance.',
+                'instance_title': instance.title,
+                'instance_status': instance.status,
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = WorkflowInstanceDetailSerializer(instance, context={'request': request})
+        return Response(serializer.data)
+
+
+class PublicInstanceTasksView(APIView):
+    """List / execute tasks via public token."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        instance = get_object_or_404(WorkflowInstance, public_token=token)
+        if not request.user.is_authenticated:
+            return Response({'error': 'authentication_required'}, status=401)
+
+        tasks = instance.task_executions.filter(
+            station=instance.current_station
+        ).select_related('task_definition', 'executed_by').order_by('task_definition__order')
+
+        response_data = {
+            'station': {'id': instance.current_station.id, 'name': instance.current_station.name},
+            'count': tasks.count(),
+            'results': TaskExecutionSerializer(tasks, many=True).data,
+        }
+        return Response(response_data)
+
+
+class PublicInstanceTaskActionView(APIView):
+    """Start / submit a task via public token."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, token, task_pk, action):
+        instance = get_object_or_404(WorkflowInstance, public_token=token)
+        if not request.user.is_authenticated:
+            return Response({'error': 'authentication_required'}, status=401)
+
+        task_exec = get_object_or_404(
+            TaskExecution, id=task_pk, instance=instance,
+            station=instance.current_station
+        )
+
+        engine = WorkflowEngine()
+        try:
+            if action == 'start':
+                result = engine.start_task(task_exec, request.user)
+                return Response({
+                    'id': result.id, 'status': result.status,
+                    'task_name': result.task_definition.name,
+                })
+            elif action == 'submit':
+                response_data = request.data.get('response_data', {})
+                remarks = request.data.get('remarks', '')
+                result = engine.submit_task(task_exec, request.user, response_data, remarks)
+                return Response({
+                    'id': result.id, 'status': result.status,
+                    'task_name': result.task_definition.name,
+                    'completed_at': result.completed_at,
+                })
+            else:
+                return Response({'error': 'invalid_action'}, status=400)
+        except WorkflowEngineError as e:
+            return Response(
+                {'error': e.error_code, 'message': str(e), 'details': e.details},
+                status=e.status_code
+            )
+
+
+class PublicInstanceMoveView(APIView):
+    """Move workflow via public token."""
+    permission_classes = [AllowAny]
+
+    def post(self, request, token):
+        instance = get_object_or_404(WorkflowInstance, public_token=token)
+        if not request.user.is_authenticated:
+            return Response({'error': 'authentication_required'}, status=401)
+
+        to_station_id = request.data.get('to_station_id')
+        if not to_station_id:
+            return Response({'error': 'missing_field', 'message': 'to_station_id is required'}, status=400)
+
+        to_station = get_object_or_404(Station, id=to_station_id)
+
+        engine = WorkflowEngine()
+        try:
+            result = engine.move(
+                instance=instance,
+                to_station=to_station,
+                user=request.user,
+                remarks=request.data.get('remarks', ''),
+            )
+        except WorkflowEngineError as e:
+            return Response(
+                {'error': e.error_code, 'message': str(e), 'details': e.details},
+                status=e.status_code
+            )
+
+        inst = result['instance']
+        return Response({
+            'success': True,
+            'message': f"Moved: {result['from_station'].name} → {result['to_station'].name}",
+            'instance': {
+                'id': inst.id, 'reference': inst.reference, 'status': inst.status,
+                'current_station': {'id': inst.current_station.id, 'name': inst.current_station.name},
+                'updated_at': inst.updated_at,
+            },
+            'new_tasks': [{'id': t.id, 'task_name': t.task_definition.name} for t in result['new_tasks']],
+        })

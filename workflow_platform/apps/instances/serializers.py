@@ -37,6 +37,7 @@ class WorkflowInstanceListSerializer(serializers.ModelSerializer):
                   'current_owner', 'current_owner_name',
                   'initiated_by', 'initiated_by_name',
                   'instance_data', 'pending_required_tasks',
+                  'public_token',
                   'created_at', 'updated_at']
 
     def get_pending_required_tasks(self, obj):
@@ -66,7 +67,7 @@ class WorkflowInstanceDetailSerializer(serializers.ModelSerializer):
                   'current_owner', 'current_owner_info',
                   'initiated_by', 'initiated_by_info',
                   'instance_data', 'user_permissions', 'progress',
-                  'station_timeline',
+                  'station_timeline', 'public_token',
                   'created_at', 'updated_at', 'completed_at']
 
     def get_initiated_by_info(self, obj):
@@ -96,18 +97,30 @@ class WorkflowInstanceDetailSerializer(serializers.ModelSerializer):
 
         user_roles = set(request.user.groups.values_list('name', flat=True))
         station_roles = set(obj.current_station.allowed_roles.values_list('name', flat=True))
-        can_act = bool(user_roles.intersection(station_roles)) if station_roles else True
+        can_act_on_station = bool(user_roles.intersection(station_roles)) if station_roles else True
 
         pending = obj.task_executions.filter(
             station=obj.current_station,
             task_definition__is_required=True,
         ).exclude(status=TaskExecution.ExecutionStatus.COMPLETED).exists()
 
+        # Per-task permissions: which tasks can this user execute?
+        executable_tasks = []
+        for te in obj.task_executions.filter(station=obj.current_station):
+            td = te.task_definition
+            task_roles = set(td.allowed_roles.values_list('name', flat=True))
+            if task_roles:
+                can_exec = bool(user_roles.intersection(task_roles))
+            else:
+                can_exec = can_act_on_station  # inherit station
+            executable_tasks.append({'task_execution_id': te.id, 'can_execute': can_exec})
+
         return {
-            'can_execute_tasks': can_act,
-            'can_move_workflow': can_act and not pending,
-            'can_upload_documents': can_act,
-            'reason_if_blocked': 'Required tasks pending' if (can_act and pending) else None,
+            'can_execute_tasks': can_act_on_station,
+            'can_move_workflow': can_act_on_station and not pending,
+            'can_upload_documents': can_act_on_station,
+            'reason_if_blocked': 'Required tasks pending' if (can_act_on_station and pending) else None,
+            'executable_tasks': executable_tasks,
         }
 
     def get_progress(self, obj):
@@ -190,9 +203,16 @@ class WorkflowMoveSerializer(serializers.Serializer):
 # ── Task Execution ──────────────────────────────────────────
 
 class TaskDefinitionMiniSerializer(serializers.ModelSerializer):
+    allowed_roles = serializers.SerializerMethodField()
+
     class Meta:
         model = TaskDefinition
-        fields = ['id', 'name', 'task_type', 'is_required', 'order', 'task_config']
+        fields = ['id', 'name', 'task_type', 'is_required', 'order', 'task_config', 'allowed_roles']
+
+    def get_allowed_roles(self, obj):
+        """Task-level roles. Empty list = inherit station roles."""
+        return [{'id': r.id, 'name': r.name, 'display_name': r.name.replace('_', ' ').title()}
+                for r in obj.allowed_roles.all()]
 
 
 class TaskExecutionSerializer(serializers.ModelSerializer):

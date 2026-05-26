@@ -14,6 +14,7 @@ erDiagram
     Station ||--o{ Transition : "to_station"
     Station ||--o{ TaskDefinition : "has tasks"
     Station }o--o{ Role : "allowed roles (M2M)"
+    TaskDefinition }o--o{ Role : "allowed roles (M2M subset of station)"
     WorkflowInstance ||--o{ WorkflowInstanceHistory : "audit log"
     WorkflowInstance ||--o{ TaskExecution : "runs tasks"
     WorkflowInstance ||--o{ Document : "has documents"
@@ -273,7 +274,10 @@ class Role(models.Model):
 1. Keycloak issues JWT with `realm_access.roles: ["QA_TEAM", "QA_MANAGER"]`
 2. Django decodes JWT, extracts roles
 3. When user tries to move workflow at Station X, engine checks: `user.roles ∩ station.allowed_roles ≠ ∅`
-4. No direct user-to-station mapping — everything goes through roles
+4. When user tries to execute a Task at Station X, engine checks:
+   - If task has `allowed_roles` set: `user.roles ∩ task.allowed_roles ≠ ∅`
+   - If task has NO `allowed_roles`: inherits station's roles (backward compatible)
+5. No direct user-to-station mapping — everything goes through roles
 
 ---
 
@@ -495,6 +499,15 @@ class TaskDefinition(models.Model):
 
     # Display order within the station
     order = models.PositiveIntegerField(default=0)
+
+    # Roles allowed to execute this task (subset of station.allowed_roles)
+    # If empty, inherits station's allowed_roles — any station actor can execute
+    allowed_roles = models.ManyToManyField(
+        'Role',
+        blank=True,
+        related_name='executable_tasks',
+        help_text='Subset of station roles. If blank, any station role can execute.'
+    )
 
     # ============================================================
     # JSON CONFIGURATION — drives dynamic form rendering

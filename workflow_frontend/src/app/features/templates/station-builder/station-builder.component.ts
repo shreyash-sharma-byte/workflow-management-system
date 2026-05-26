@@ -169,6 +169,16 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
               Required — must be completed before the workflow can move forward
             </label>
           </div>
+          <div class="form-group">
+            <label class="form-label">Who can execute this task? <span class="text-xs text-muted">— subset of station roles</span></label>
+            <div class="flex flex-wrap gap-2">
+              <label *ngFor="let r of taskAvailableRoles" class="form-checkbox">
+                <input type="checkbox" [checked]="selectedTaskRoles.has(r.id)" (change)="toggleTaskRole(r.id)">
+                {{ r.display_name || r.name }}
+              </label>
+            </div>
+            <p class="form-hint">If no roles selected, any station role can execute this task.</p>
+          </div>
 
           <!-- FORM builder -->
           <div *ngIf="newTaskType === 'FORM'" style="border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-4);margin-bottom:var(--space-3);">
@@ -232,10 +242,12 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
              class="flex justify-between items-center"
              style="padding:var(--space-2) 0;border-bottom:1px solid var(--border-light);"
              [style.border-bottom]="last ? 'none' : ''">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2" style="flex-wrap:wrap;">
             <span class="font-medium text-sm">{{ t.name }}</span>
             <span class="badge badge-neutral badge-sm">{{ t.task_type }}</span>
             <span *ngIf="t.is_required" class="badge badge-danger badge-sm">Required</span>
+            <span *ngFor="let r of (t.allowed_roles || [])" class="badge badge-primary badge-sm">{{ r.display_name || r.name }}</span>
+            <span *ngIf="!(t.allowed_roles || []).length" class="text-xs text-muted">(any station role)</span>
           </div>
           <button class="btn btn-ghost btn-sm" (click)="doDeleteTask(t.id)" style="color:var(--danger);">Delete</button>
         </div>
@@ -268,6 +280,7 @@ export class StationBuilderComponent implements OnInit {
   newTaskName = '';
   newTaskType = 'APPROVAL';
   newTaskRequired = true;
+  selectedTaskRoles = new Set<number>();
   formFields: { key: string; label: string; type: string; required: boolean; optionsStr: string }[] = [];
   checkItems: { key: string; label: string; required: boolean }[] = [];
 
@@ -345,10 +358,29 @@ export class StationBuilderComponent implements OnInit {
     }
   }
 
+  get taskAvailableRoles(): Role[] {
+    if (!this.taskStation) return [];
+    const stationRoles = this.taskStation.allowed_roles || [];
+    if (stationRoles.length > 0) return stationRoles;
+    // If station has no role restrictions, show all roles as available
+    return this.allRoles;
+  }
+
   // ── Task Management ────────────────────────────────
   manageTasks(s: Station): void {
     this.taskStation = s;
+    this.selectedTaskRoles.clear();
+    this.newTaskName = '';
+    this.newTaskType = 'APPROVAL';
+    this.newTaskRequired = true;
+    this.formFields = [];
+    this.checkItems = [];
     this.api.listTasks(this.templateId, s.id).subscribe(r => this.stationTasks = r.results);
+  }
+
+  toggleTaskRole(id: number): void {
+    if (this.selectedTaskRoles.has(id)) this.selectedTaskRoles.delete(id);
+    else this.selectedTaskRoles.add(id);
   }
 
   addTask(): void {
@@ -368,14 +400,17 @@ export class StationBuilderComponent implements OnInit {
       };
     }
 
-    const data = {
+    const roleIds = Array.from(this.selectedTaskRoles);
+    const data: any = {
       name: this.newTaskName.trim(), task_type: this.newTaskType,
       is_required: this.newTaskRequired, order: this.stationTasks.length + 1,
       task_config: config,
     };
+    if (roleIds.length > 0) data.allowed_role_ids = roleIds;
 
     this.api.createTask(this.templateId, this.taskStation.id, data).subscribe(() => {
       this.newTaskName = ''; this.formFields = []; this.checkItems = [];
+      this.selectedTaskRoles.clear();
       this.manageTasks(this.taskStation!);
     });
   }

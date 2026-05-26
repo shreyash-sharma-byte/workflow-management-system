@@ -8,6 +8,8 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { keycloakInitializer } from './core/auth/keycloak-init';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { ErrorInterceptor } from './core/interceptors/error.interceptor';
+import { LoadingInterceptor } from './core/interceptors/loading.interceptor';
 
 import { LayoutComponent } from './layout/layout.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
@@ -23,6 +25,11 @@ import { InstanceListComponent } from './features/instances/instance-list/instan
 import { InstanceCreateComponent } from './features/instances/instance-create/instance-create.component';
 import { InstanceDetailComponent } from './features/instances/instance-detail/instance-detail.component';
 import { TaskExecutionComponent } from './features/instances/task-execution/task-execution.component';
+import { PublicInstanceWrapperComponent } from './features/instances/public-instance/public-instance-wrapper.component';
+import { ToastContainerComponent } from './core/components/toast-container.component';
+import { NotificationPopoverComponent } from './layout/header/notification-popover.component';
+import { NotificationsPageComponent } from './features/notifications/notifications-page.component';
+import { LoadingSpinnerComponent } from './core/components/loading-spinner.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +39,9 @@ import { TaskExecutionComponent } from './features/instances/task-execution/task
     TemplateListComponent, TemplateCreateComponent, TemplateDetailComponent,
     StationBuilderComponent, TransitionBuilderComponent,
     InstanceListComponent, InstanceCreateComponent, InstanceDetailComponent,
-    TaskExecutionComponent,
+    TaskExecutionComponent, PublicInstanceWrapperComponent,
+    ToastContainerComponent, NotificationPopoverComponent,
+    NotificationsPageComponent, LoadingSpinnerComponent,
   ],
   imports: [
     BrowserModule, HttpClientModule,
@@ -50,6 +59,16 @@ import { TaskExecutionComponent } from './features/instances/task-execution/task
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ErrorInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: LoadingInterceptor,
       multi: true,
     },
   ],

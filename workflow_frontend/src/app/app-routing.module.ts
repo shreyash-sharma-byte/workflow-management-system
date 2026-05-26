@@ -11,8 +11,13 @@ import { TransitionBuilderComponent } from './features/templates/transition-buil
 import { InstanceListComponent } from './features/instances/instance-list/instance-list.component';
 import { InstanceCreateComponent } from './features/instances/instance-create/instance-create.component';
 import { InstanceDetailComponent } from './features/instances/instance-detail/instance-detail.component';
+import { PublicInstanceWrapperComponent } from './features/instances/public-instance/public-instance-wrapper.component';
+import { NotificationsPageComponent } from './features/notifications/notifications-page.component';
 
 const routes: Routes = [
+  // ── Public Instance View (standalone micro-frontend, no admin chrome) ──
+  { path: 'w/:token', component: PublicInstanceWrapperComponent },
+
   {
     path: '',
     component: LayoutComponent,
@@ -41,12 +46,8 @@ const routes: Routes = [
       { path: 'instances/new', component: InstanceCreateComponent, canActivate: [InitiatorGuard] },
       { path: 'instances/:id', component: InstanceDetailComponent },
 
-      // ── Notifications (NEW) ────────────────────────
-      {
-        path: 'notifications',
-        component: DashboardComponent,  // Placeholder; can be swapped for dedicated NotificationsComponent
-        data: { view: 'notifications' },
-      },
+      // ── Notifications ──────────────────────────────
+      { path: 'notifications', component: NotificationsPageComponent },
 
       // ── Admin Panel (NEW — admin only) ─────────────
       {
