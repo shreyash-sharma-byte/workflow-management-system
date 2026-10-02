@@ -75,8 +75,18 @@ class KeycloakJWTAuthentication(authentication.BaseAuthentication):
                 options=options,
             )
         else:
-            # Development mode: decode without verification
-            return jwt.decode(token, '', options={'verify_signature': False})
+            # Development mode: decode without verification.
+            #
+            # verify_aud must be turned off explicitly. Keycloak only omits the
+            # `aud` claim for *some* users — anyone whose roles resolve an
+            # audience mapper (e.g. users carrying the account client roles) gets
+            # `aud: "account"`. python-jose then rejects the token with
+            # "Invalid audience" because no expected audience is configured, so
+            # the no-verify path was silently refusing perfectly valid tokens.
+            return jwt.decode(
+                token, '',
+                options={'verify_signature': False, 'verify_aud': False},
+            )
 
     def _get_public_key(self, token: str) -> str:
         """Fetch the public key from Keycloak's JWKS endpoint."""
