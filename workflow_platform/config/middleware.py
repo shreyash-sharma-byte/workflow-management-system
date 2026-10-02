@@ -14,7 +14,17 @@ class SanitizeInputMiddleware:
 
     def __call__(self, request):
         if request.method in ('POST', 'PUT', 'PATCH'):
-            self._sanitize_data(request.POST)
+            post = request.POST
+            if post:
+                # Django marks request.POST read-only once the request body has
+                # been consumed — which is the case for multipart uploads, where
+                # the body is read to parse the file parts. Mutating it in place
+                # raised "This QueryDict instance is immutable" and turned every
+                # document upload into a 500. Copy first, then assign it back.
+                if not getattr(post, '_mutable', True):
+                    post = post.copy()
+                    request.POST = post
+                self._sanitize_data(post)
             if hasattr(request, 'data') and isinstance(request.data, dict):
                 self._sanitize_data(request.data)
         return self.get_response(request)
