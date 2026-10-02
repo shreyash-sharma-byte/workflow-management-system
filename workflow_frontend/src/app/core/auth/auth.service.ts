@@ -48,6 +48,8 @@ export class AuthService {
   }
 
   logout(): void {
-    this.keycloak.logout('http://localhost:4200');
+    // Whatever origin the app was served from is where Keycloak should send the
+    // user back to — never a hardcoded host.
+    this.keycloak.logout(window.location.origin);
   }
 }
