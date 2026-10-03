@@ -15,6 +15,7 @@ import { LayoutComponent } from './layout/layout.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { HeaderComponent } from './layout/header/header.component';
 
+import { LandingComponent } from './features/landing/landing.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { TemplateListComponent } from './features/templates/template-list/template-list.component';
 import { TemplateCreateComponent } from './features/templates/template-create/template-create.component';
@@ -35,6 +36,7 @@ import { LoadingSpinnerComponent } from './core/components/loading-spinner.compo
   declarations: [
     AppComponent,
     LayoutComponent, SidebarComponent, HeaderComponent,
+    LandingComponent,
     DashboardComponent,
     TemplateListComponent, TemplateCreateComponent, TemplateDetailComponent,
     StationBuilderComponent, TransitionBuilderComponent,

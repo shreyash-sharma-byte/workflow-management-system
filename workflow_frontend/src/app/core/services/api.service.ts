@@ -9,8 +9,12 @@ import {
   DocumentInfo, AdminDashboard, UserDashboard,
   MoveResponse, AllowedTransitions, PaginatedResponse,
 } from '../../shared/models/types';
+import { runtimeConfig } from '../config/runtime-config';
 
-const BASE = 'http://localhost:8000/api/v1';
+// Resolved from the injected runtime config; the edge server rewrites the
+// matching origin onto every deployment host. Read at module load, which is
+// after /assets/config.js has run.
+const BASE = runtimeConfig().apiBase;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {

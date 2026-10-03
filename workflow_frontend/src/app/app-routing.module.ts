@@ -1,7 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AuthGuard, AdminGuard, InitiatorGuard } from './core/auth/auth.guard';
+import { AuthGuard, AdminGuard, InitiatorGuard, unauthenticatedGuard } from './core/auth/auth.guard';
 import { LayoutComponent } from './layout/layout.component';
+import { LandingComponent } from './features/landing/landing.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { TemplateListComponent } from './features/templates/template-list/template-list.component';
 import { TemplateCreateComponent } from './features/templates/template-create/template-create.component';
@@ -17,6 +18,10 @@ import { NotificationsPageComponent } from './features/notifications/notificatio
 const routes: Routes = [
   // ── Public Instance View (standalone micro-frontend, no admin chrome) ──
   { path: 'w/:token', component: PublicInstanceWrapperComponent },
+
+  // ── Public landing (pre-login "what this app does" screen) ──
+  // Matched only while signed out; signed-in users fall through to the layout.
+  { path: '', component: LandingComponent, canMatch: [unauthenticatedGuard] },
 
   {
     path: '',
