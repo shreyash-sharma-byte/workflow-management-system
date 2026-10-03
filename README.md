@@ -1,5 +1,7 @@
 # ⚡ Enterprise Workflow Management System
 
+**Live demo:** https://foods-referrals-rolling-promotes.trycloudflare.com — sign in with any demo account shown on the sign-in page.
+
 A full-stack enterprise workflow execution platform where organizations can create reusable workflow templates, configure stations with role-based access, execute workflow instances, and maintain complete immutable audit trails.
 
 > 🎬 **[Demo SOP with 10 screenshots →](DEMO.md)**
