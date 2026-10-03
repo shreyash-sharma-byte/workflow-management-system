@@ -65,7 +65,6 @@ interface NotificationItem {
       </div>
 
       <div *ngIf="notifications.length === 0" class="empty-state">
-        <div class="empty-state-icon">🔔</div>
         <div class="empty-state-title">No notifications</div>
         <div class="empty-state-desc">You're all caught up! Notifications appear when workflows reach your stations.</div>
       </div>
@@ -75,11 +74,11 @@ interface NotificationItem {
     <div class="flex justify-between items-center mt-3" *ngIf="totalPages > 1">
       <span class="text-sm text-muted">{{ totalCount }} total · page {{ page }} of {{ totalPages }}</span>
       <div class="flex gap-1">
-        <button class="btn btn-outline btn-xs" [disabled]="page <= 1" (click)="load(page - 1)">← Prev</button>
+        <button class="btn btn-outline btn-xs" [disabled]="page <= 1" (click)="load(page - 1)">Prev</button>
         <button *ngFor="let p of pagesArray()" class="btn btn-xs"
                 [class.btn-primary]="p === page" [class.btn-outline]="p !== page"
                 (click)="load(p)">{{ p }}</button>
-        <button class="btn btn-outline btn-xs" [disabled]="page >= totalPages" (click)="load(page + 1)">Next →</button>
+        <button class="btn btn-outline btn-xs" [disabled]="page >= totalPages" (click)="load(page + 1)">Next</button>
       </div>
     </div>
   `,

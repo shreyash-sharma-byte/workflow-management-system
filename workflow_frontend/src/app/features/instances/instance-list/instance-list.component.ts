@@ -6,7 +6,7 @@ import { WorkflowInstance } from '../../../shared/models/types';
 @Component({
   selector: 'app-instance-list',
   template: `
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-4 toolbar">
       <div>
         <h1 class="page-title" style="margin-bottom:var(--space-1);">Instances</h1>
         <p class="text-sm text-muted">
@@ -36,7 +36,7 @@ import { WorkflowInstance } from '../../../shared/models/types';
 
     <!-- Table -->
     <div class="card" *ngIf="instances.length > 0">
-      <div class="card-body-flush">
+      <div class="card-body-flush table-responsive">
         <table class="table">
           <thead>
             <tr>
@@ -80,18 +80,17 @@ import { WorkflowInstance } from '../../../shared/models/types';
     <div class="flex justify-between items-center mt-3" *ngIf="totalPages > 1">
       <span class="text-sm text-muted">{{ totalCount }} total · page {{ page }} of {{ totalPages }}</span>
       <div class="flex gap-1">
-        <button class="btn btn-outline btn-xs" [disabled]="page <= 1" (click)="goPage(page - 1)">← Prev</button>
+        <button class="btn btn-outline btn-xs" [disabled]="page <= 1" (click)="goPage(page - 1)">Prev</button>
         <button *ngFor="let p of pagesArray()" class="btn btn-xs"
                 [class.btn-primary]="p === page" [class.btn-outline]="p !== page"
                 (click)="goPage(p)">{{ p }}</button>
-        <button class="btn btn-outline btn-xs" [disabled]="page >= totalPages" (click)="goPage(page + 1)">Next →</button>
+        <button class="btn btn-outline btn-xs" [disabled]="page >= totalPages" (click)="goPage(page + 1)">Next</button>
       </div>
     </div>
 
     <!-- Empty State -->
     <div class="card" *ngIf="instances.length === 0">
       <div class="empty-state">
-        <div class="empty-state-icon">◎</div>
         <div class="empty-state-title">No instances found</div>
         <div class="empty-state-desc" *ngIf="!statusFilter && !search">
           No workflow instances have been created yet.

@@ -1,14 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-sidebar',
   template: `
-    <nav class="app-sidebar">
+    <nav class="app-sidebar" [class.open]="open">
       <!-- Brand -->
       <div class="sidebar-brand">
         <div class="sidebar-brand-icon">W</div>
         <span class="sidebar-brand-text">Workflow</span>
+        <button class="sidebar-close" (click)="close.emit()" aria-label="Close navigation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <!-- Primary Navigation -->
@@ -16,13 +19,13 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="sidebar-section-label">Main</div>
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item">
-            <a class="sidebar-nav-link" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
-              <span class="nav-icon">◫</span> Dashboard
+            <a class="sidebar-nav-link" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="close.emit()">
+              Dashboard
             </a>
           </li>
           <li class="sidebar-nav-item">
-            <a class="sidebar-nav-link" routerLink="/my-tasks" routerLinkActive="active">
-              <span class="nav-icon">☰</span> My Tasks
+            <a class="sidebar-nav-link" routerLink="/my-tasks" routerLinkActive="active" (click)="close.emit()">
+              My Tasks
               <span class="nav-badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
             </a>
           </li>
@@ -34,13 +37,13 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="sidebar-section-label">Work Items</div>
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item">
-            <a class="sidebar-nav-link" routerLink="/instances" routerLinkActive="active">
-              <span class="nav-icon">◎</span> Instances
+            <a class="sidebar-nav-link" routerLink="/instances" routerLinkActive="active" (click)="close.emit()">
+              Instances
             </a>
           </li>
           <li class="sidebar-nav-item">
-            <a class="sidebar-nav-link" routerLink="/templates" routerLinkActive="active">
-              <span class="nav-icon">▦</span> Templates
+            <a class="sidebar-nav-link" routerLink="/templates" routerLinkActive="active" (click)="close.emit()">
+              Templates
             </a>
           </li>
         </ul>
@@ -51,12 +54,12 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="sidebar-section-label">Quick Actions</div>
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item" *ngIf="auth.isInitiator">
-            <a class="sidebar-nav-link" routerLink="/instances/new" [class.active]="false">
+            <a class="sidebar-nav-link" routerLink="/instances/new" [class.active]="false" (click)="close.emit()">
               <span class="nav-icon" style="color:var(--success);">+</span> New Instance
             </a>
           </li>
           <li class="sidebar-nav-item" *ngIf="auth.isAdmin">
-            <a class="sidebar-nav-link" routerLink="/templates/new" [class.active]="false">
+            <a class="sidebar-nav-link" routerLink="/templates/new" [class.active]="false" (click)="close.emit()">
               <span class="nav-icon" style="color:var(--primary);">+</span> New Template
             </a>
           </li>
@@ -68,8 +71,8 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="sidebar-section-label">Administration</div>
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item">
-            <a class="sidebar-nav-link" routerLink="/admin" routerLinkActive="active">
-              <span class="nav-icon">⚙</span> Admin Panel
+            <a class="sidebar-nav-link" routerLink="/admin" routerLinkActive="active" (click)="close.emit()">
+              Admin Panel
             </a>
           </li>
         </ul>
@@ -89,6 +92,8 @@ import { AuthService } from '../../core/auth/auth.service';
   `,
 })
 export class SidebarComponent {
+  @Input() open = false;
+  @Output() close = new EventEmitter<void>();
   pendingCount = 0; // TODO: fetch from notifications/task API
 
   constructor(public auth: AuthService) {}

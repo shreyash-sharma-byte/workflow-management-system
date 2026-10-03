@@ -7,7 +7,7 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
   selector: 'app-dashboard',
   template: `
     <!-- Welcome Banner -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-head flex justify-between items-center mb-6">
       <div>
         <h1 class="page-title" style="margin-bottom:var(--space-1);">Good {{ greeting }}, {{ auth.username }}</h1>
         <p class="text-muted text-md">
@@ -18,7 +18,7 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
           </ng-container>
         </p>
       </div>
-      <div class="quick-actions">
+      <div class="page-head-actions">
         <a *ngIf="auth.isInitiator" class="btn btn-primary" routerLink="/instances/new">
           + New Instance
         </a>
@@ -32,33 +32,21 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
     <div class="section-title">My Workload</div>
     <div class="stats-grid">
       <div class="stat-card interactive" routerLink="/my-tasks" *ngIf="userStats?.my_workload">
-        <div class="stat-card-header">
-          <span class="stat-card-icon" style="background:var(--warning-light);">⏳</span>
-        </div>
         <div class="stat-card-value" style="color:var(--warning);">{{ userStats?.my_workload?.blocked_by_me || 0 }}</div>
         <div class="stat-card-label">Needs My Action</div>
       </div>
 
       <div class="stat-card interactive" routerLink="/instances" *ngIf="userStats?.my_workload">
-        <div class="stat-card-header">
-          <span class="stat-card-icon" style="background:var(--info-light);">📋</span>
-        </div>
         <div class="stat-card-value">{{ userStats?.my_workload?.assigned_to_me || 0 }}</div>
         <div class="stat-card-label">Assigned to Me</div>
       </div>
 
       <div class="stat-card" *ngIf="userStats?.my_workload">
-        <div class="stat-card-header">
-          <span class="stat-card-icon" style="background:var(--success-light);">✓</span>
-        </div>
         <div class="stat-card-value" style="color:var(--success);">{{ userStats?.my_workload?.completed_by_me || 0 }}</div>
         <div class="stat-card-label">Completed by Me</div>
       </div>
 
       <div class="stat-card interactive" routerLink="/instances" *ngIf="userStats?.my_initiated">
-        <div class="stat-card-header">
-          <span class="stat-card-icon" style="background:var(--primary-light);">▶</span>
-        </div>
         <div class="stat-card-value" style="color:var(--primary);">{{ userStats?.my_initiated?.total || 0 }}</div>
         <div class="stat-card-label">Initiated by Me</div>
       </div>
@@ -69,25 +57,16 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
       <div class="section-title mt-4">System Overview</div>
       <div class="stats-grid">
         <div class="stat-card interactive" routerLink="/templates">
-          <div class="stat-card-header">
-            <span class="stat-card-icon" style="background:var(--primary-light);">▦</span>
-          </div>
           <div class="stat-card-value" style="color:var(--primary);">{{ adminStats.total_templates || 0 }}</div>
           <div class="stat-card-label">Total Templates</div>
         </div>
 
         <div class="stat-card interactive" routerLink="/instances">
-          <div class="stat-card-header">
-            <span class="stat-card-icon" style="background:var(--info-light);">◎</span>
-          </div>
           <div class="stat-card-value" style="color:var(--info);">{{ adminStats.active_instances || 0 }}</div>
           <div class="stat-card-label">Active Instances</div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-card-header">
-            <span class="stat-card-icon" style="background:var(--success-light);">📊</span>
-          </div>
           <div class="stat-card-value" style="color:var(--success);">{{ adminStats.completed_today || 0 }}</div>
           <div class="stat-card-label">Completed Today</div>
         </div>
@@ -97,7 +76,7 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
     <!-- Recent Workflows Table -->
     <div class="section-title mt-4">Recent Workflows</div>
     <div class="card" *ngIf="userStats?.recent_instances?.length">
-      <div class="card-body-flush">
+      <div class="card-body-flush table-responsive">
         <table class="table">
           <thead>
             <tr>
@@ -125,7 +104,7 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
               </td>
               <td class="text-sm text-muted cell-nowrap">{{ i.updated_at | date:'short' }}</td>
               <td>
-                <a class="btn btn-ghost btn-sm" [routerLink]="['/instances', i.id]">View →</a>
+                <a class="btn btn-ghost btn-sm" [routerLink]="['/instances', i.id]">View</a>
               </td>
             </tr>
           </tbody>
@@ -136,7 +115,6 @@ import { AdminDashboard, UserDashboard } from '../../shared/models/types';
     <!-- Empty State -->
     <div *ngIf="!userStats?.recent_instances?.length" class="card">
       <div class="empty-state">
-        <div class="empty-state-icon">📭</div>
         <div class="empty-state-title">Welcome to Workflow</div>
         <div class="empty-state-desc">
           <ng-container *ngIf="auth.isInitiator">

@@ -26,7 +26,7 @@ import { WorkflowTemplate } from '../../../shared/models/types';
         <button class="btn btn-outline" routerLink="/templates">Cancel</button>
       </div>
       <div *ngIf="created" class="mt-1" style="color:var(--success);">
-        ✅ Template created! <a [routerLink]="['/templates', created.id]">Open it →</a>
+        Template created! <a [routerLink]="['/templates', created.id]">Open it</a>
       </div>
       </div>
     </div>

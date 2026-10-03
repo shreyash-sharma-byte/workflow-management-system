@@ -22,17 +22,17 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
             {{ templateStatus || 'DRAFT' }}
           </span>
         </div>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center toolbar">
           <div>
             <h3 style="margin:0;">{{ templateName || 'Loading...' }}</h3>
             <p class="text-xs text-muted mt-1" *ngIf="templateDesc">{{ templateDesc }}</p>
           </div>
           <div class="flex gap-2">
             <a class="btn btn-outline btn-sm" [routerLink]="['/templates', templateId, 'transitions']">
-              Switch to Transitions →
+              Switch to Transitions
             </a>
             <a class="btn btn-secondary btn-sm" [routerLink]="['/templates', templateId]">
-              ← Template Overview
+              Template Overview
             </a>
           </div>
         </div>
@@ -50,9 +50,9 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
         <div class="form-group">
           <label class="form-label">Station Type</label>
           <select class="form-select" [(ngModel)]="newType">
-            <option value="START">🚀 Start — Entry point of the workflow</option>
-            <option value="NORMAL">📋 Normal — Intermediate processing station</option>
-            <option value="END">🏁 End — Terminal station</option>
+            <option value="START">Start — Entry point of the workflow</option>
+            <option value="NORMAL">Normal — Intermediate processing station</option>
+            <option value="END">End — Terminal station</option>
           </select>
         </div>
         <div class="form-group">
@@ -83,12 +83,11 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
       <div class="card-header">
         All Stations · {{ stations.length }}
         <span class="text-xs text-muted font-normal">
-          {{ stations.length === 0 ? 'Add START and END stations to begin' : (startCount ? '✓' : '⚠ Need START') + ' & ' + (endCount ? '✓' : '⚠ Need END') }}
+          {{ stations.length === 0 ? 'Add START and END stations to begin' : 'START ' + (startCount ? 'defined' : 'missing') + ' · END ' + (endCount ? 'defined' : 'missing') }}
         </span>
       </div>
       <div class="card-body-flush">
         <div *ngIf="stations.length === 0" class="empty-state">
-          <div class="empty-state-icon">🏗️</div>
           <div class="empty-state-title">No stations defined</div>
           <div class="empty-state-desc">Start by adding a START station (entry point) and an END station (completion point).</div>
         </div>
@@ -102,7 +101,7 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
                   [class.badge-danger]="s.station_type==='END'"
                   [class.badge-neutral]="s.station_type==='NORMAL'"
                   style="flex-shrink:0;">
-              {{ s.station_type === 'START' ? '🚀 START' : s.station_type === 'END' ? '🏁 END' : s.station_type }}
+              {{ s.station_type }}
             </span>
             <div style="min-width:0;">
               <div class="font-medium text-sm truncate">{{ s.name }}</div>
@@ -126,12 +125,12 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
     <div class="card mt-4" *ngIf="transitionCount > 0">
       <div class="card-header">
         Connected Transitions · {{ transitionCount }}
-        <a class="btn btn-ghost btn-xs" [routerLink]="['/templates', templateId, 'transitions']">Manage →</a>
+        <a class="btn btn-ghost btn-xs" [routerLink]="['/templates', templateId, 'transitions']">Manage</a>
       </div>
       <div class="card-body" style="padding:var(--space-3) var(--space-5);">
         <div class="flex flex-wrap gap-2">
           <span *ngFor="let t of transitions" class="badge badge-info">
-            {{ t.from_station.name }} → {{ t.to_station.name }}
+            {{ t.from_station.name }} to {{ t.to_station.name }}
             <span *ngIf="t.label" style="opacity:0.8;">({{ t.label }})</span>
           </span>
         </div>
@@ -142,8 +141,8 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
     <div *ngIf="taskStation" class="modal-backdrop" (click)="closeTaskModal()">
       <div class="modal modal-lg" (click)="preventClose($event)">
         <div class="modal-header">
-          <span>📋 Tasks for <strong>{{ taskStation.name }}</strong></span>
-          <button class="btn btn-ghost btn-sm" (click)="closeTaskModal()">✕</button>
+          <span>Tasks for <strong>{{ taskStation.name }}</strong></span>
+          <button class="btn btn-ghost btn-sm" (click)="closeTaskModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </div>
         <div class="modal-body">
 
@@ -157,10 +156,10 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
           <div class="form-group">
             <label class="form-label">Task Type</label>
             <select class="form-select" [(ngModel)]="newTaskType" (change)="onTaskTypeChange()">
-              <option value="APPROVAL">👍 Approval — Simple approve/reject decision</option>
-              <option value="FORM">📝 Form — Collect structured data via fields</option>
-              <option value="DOCUMENT">📎 Document — Require file uploads</option>
-              <option value="CONFIRMATION">✅ Confirmation — Checklist of items to verify</option>
+              <option value="APPROVAL">Approval — Simple approve/reject decision</option>
+              <option value="FORM">Form — Collect structured data via fields</option>
+              <option value="DOCUMENT">Document — Require file uploads</option>
+              <option value="CONFIRMATION">Confirmation — Checklist of items to verify</option>
             </select>
           </div>
           <div class="form-group">
@@ -209,7 +208,7 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
                 <label style="font-size:var(--font-xs);white-space:nowrap;">
                   <input type="checkbox" [(ngModel)]="f.required"> Req
                 </label>
-                <button class="btn btn-ghost btn-xs" (click)="removeFormField(i)" style="color:var(--danger);">✕</button>
+                <button class="btn btn-ghost btn-xs" (click)="removeFormField(i)" style="color:var(--danger);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
               </div>
             </div>
             <div *ngIf="formFields.length === 0" class="text-sm text-muted text-center p-3">No fields yet. Click "+ Add Field" to start building the form.</div>
@@ -228,7 +227,7 @@ import { Station, Role, TaskDefinition, WorkflowTemplate, TransitionDetail } fro
               <label style="font-size:var(--font-xs);white-space:nowrap;">
                 <input type="checkbox" [(ngModel)]="c.required"> Req
               </label>
-              <button class="btn btn-ghost btn-xs" (click)="removeCheckItem(i)" style="color:var(--danger);">✕</button>
+              <button class="btn btn-ghost btn-xs" (click)="removeCheckItem(i)" style="color:var(--danger);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
             <div *ngIf="checkItems.length === 0" class="text-sm text-muted text-center p-3">No items yet. Click "+ Add Item" to build the checklist.</div>
           </div>

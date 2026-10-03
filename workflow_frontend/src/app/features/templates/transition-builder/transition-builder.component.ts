@@ -22,24 +22,24 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
             {{ templateStatus || 'DRAFT' }}
           </span>
         </div>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center toolbar">
           <div>
             <h3 style="margin:0;">{{ templateName || 'Loading...' }}</h3>
             <p class="text-xs text-muted mt-1" *ngIf="templateDesc">{{ templateDesc }}</p>
           </div>
           <div class="flex gap-2">
             <a class="btn btn-outline btn-sm" [routerLink]="['/templates', templateId, 'stations']">
-              Switch to Stations →
+              Switch to Stations
             </a>
             <a class="btn btn-secondary btn-sm" [routerLink]="['/templates', templateId]">
-              ← Template Overview
+              Template Overview
             </a>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="grid" style="grid-template-columns:1fr 320px;gap:var(--space-4);">
+    <div class="grid detail-grid">
 
       <!-- LEFT: Add Transition + List -->
       <div>
@@ -53,7 +53,6 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
                 <select class="form-select" [(ngModel)]="fromStation">
                   <option [ngValue]="null" disabled>Select source station...</option>
                   <option *ngFor="let s of stations" [value]="s.id">
-                    {{ s.station_type === 'START' ? '🚀' : s.station_type === 'END' ? '🏁' : '📋' }}
                     {{ s.name }} ({{ s.station_type }})
                   </option>
                 </select>
@@ -63,7 +62,6 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
                 <select class="form-select" [(ngModel)]="toStation">
                   <option [ngValue]="null" disabled>Select destination station...</option>
                   <option *ngFor="let s of stations" [value]="s.id">
-                    {{ s.station_type === 'START' ? '🚀' : s.station_type === 'END' ? '🏁' : '📋' }}
                     {{ s.name }} ({{ s.station_type }})
                   </option>
                 </select>
@@ -74,7 +72,7 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
               <input class="form-input" [(ngModel)]="newLabel" placeholder="e.g., Approve, Reject, Send for Review">
             </div>
             <div *ngIf="fromStation && toStation && fromStation === toStation" class="text-sm text-danger mb-3">
-              ⚠ Cannot create a self-transition. Select different stations.
+              Cannot create a self-transition. Select different stations.
             </div>
             <button class="btn btn-primary" (click)="addTransition()"
                     [disabled]="!fromStation || !toStation || fromStation === toStation">
@@ -93,7 +91,6 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
           </div>
           <div class="card-body-flush">
             <div *ngIf="transitions.length === 0" class="empty-state">
-              <div class="empty-state-icon">🔗</div>
               <div class="empty-state-title">No transitions defined</div>
               <div class="empty-state-desc">Create transitions to connect stations and define how work flows between them.</div>
             </div>
@@ -103,7 +100,7 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
                  [style.border-bottom]="last ? 'none' : ''">
               <div class="flex items-center gap-2">
                 <span class="badge badge-neutral">{{ t.from_station.name }}</span>
-                <span class="text-lg" style="color:var(--primary);">→</span>
+                <span class="text-xs text-muted">to</span>
                 <span class="badge badge-neutral">{{ t.to_station.name }}</span>
                 <span *ngIf="t.label" class="badge badge-info">{{ t.label }}</span>
               </div>
@@ -122,7 +119,7 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
           <div class="card-body-flush">
             <div *ngIf="stations.length === 0" class="p-4 text-sm text-muted text-center">
               No stations exist yet.
-              <a [routerLink]="['/templates', templateId, 'stations']" style="color:var(--primary);">Create stations first →</a>
+              <a [routerLink]="['/templates', templateId, 'stations']" style="color:var(--primary);">Create stations first</a>
             </div>
             <div *ngFor="let s of stations; let last = last"
                  class="flex items-center gap-2"
@@ -131,7 +128,7 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
               <span class="badge badge-sm" [class.badge-info]="s.station_type==='START'"
                     [class.badge-danger]="s.station_type==='END'"
                     [class.badge-neutral]="s.station_type==='NORMAL'">
-                {{ s.station_type === 'START' ? '🚀' : s.station_type === 'END' ? '🏁' : '📋' }}
+                {{ s.station_type }}
               </span>
               <span class="text-sm font-medium">{{ s.name }}</span>
             </div>
@@ -141,7 +138,7 @@ import { Station, TransitionDetail, WorkflowTemplate } from '../../../shared/mod
         <!-- Quick tip card -->
         <div class="card" style="background:var(--primary-light);border-color:var(--primary-light);">
           <div class="card-body" style="padding:var(--space-4);">
-            <div class="text-sm font-semibold mb-1" style="color:var(--primary);">💡 Tip</div>
+            <div class="text-sm font-semibold mb-1" style="color:var(--primary);">Tip</div>
             <p class="text-xs" style="color:var(--primary-dark);">
               Transitions define how work moves between stations.
               Use labels like "Approve" and "Reject" to create branching paths.

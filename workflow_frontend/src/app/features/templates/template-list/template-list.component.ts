@@ -6,7 +6,7 @@ import { WorkflowTemplate } from '../../../shared/models/types';
 @Component({
   selector: 'app-template-list',
   template: `
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-4 toolbar">
       <div>
         <h1 class="page-title" style="margin-bottom:var(--space-1);">Templates</h1>
         <p class="text-sm text-muted">
@@ -30,7 +30,7 @@ import { WorkflowTemplate } from '../../../shared/models/types';
 
     <!-- Table -->
     <div class="card" *ngIf="templates.length > 0">
-      <div class="card-body-flush">
+      <div class="card-body-flush table-responsive">
         <table class="table">
           <thead>
             <tr>
@@ -78,7 +78,6 @@ import { WorkflowTemplate } from '../../../shared/models/types';
     <!-- Empty State -->
     <div class="card" *ngIf="templates.length === 0">
       <div class="empty-state">
-        <div class="empty-state-icon">▦</div>
         <div class="empty-state-title">No templates yet</div>
         <div class="empty-state-desc">
           <ng-container *ngIf="auth.isAdmin">

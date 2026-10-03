@@ -9,7 +9,7 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           {{ task.task_definition.name }}
-          <button class="btn btn-ghost btn-sm" (click)="close()">✕</button>
+          <button class="btn btn-ghost btn-sm" (click)="close()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </div>
         <div class="modal-body">
         <p class="text-muted text-sm mb-1">
@@ -74,7 +74,7 @@ import { TaskExecution, FormField, ChecklistItem } from '../../../shared/models/
           </div>
           <div *ngIf="uploadedDocs.length > 0" class="mb-2">
             <div *ngFor="let d of uploadedDocs" class="text-sm" style="padding:4px 0;">
-              📎 {{ d.original_filename }}
+              {{ d.original_filename }}
             </div>
           </div>
           <div *ngIf="task.documents_info?.length" class="text-sm mb-2">

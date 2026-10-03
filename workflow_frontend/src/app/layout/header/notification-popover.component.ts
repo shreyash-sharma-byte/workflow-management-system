@@ -16,8 +16,8 @@ interface NotificationItem {
   selector: 'app-notification-popover',
   template: `
     <div class="notif-wrapper">
-      <button class="header-action-btn" (click)="toggle()" [class.has-unread]="unreadCount > 0">
-        🔔
+      <button class="header-action-btn" (click)="toggle()" [class.has-unread]="unreadCount > 0" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span *ngIf="unreadCount > 0" class="badge-dot"></span>
       </button>
       <div *ngIf="open" class="notif-popover" (click)="$event.stopPropagation()">
@@ -31,7 +31,7 @@ interface NotificationItem {
                [routerLink]="n.link" (click)="markRead(n); open = false">
             <div class="notif-type">
               <span *ngIf="!n.is_read" class="unread-dot"></span>
-              {{ typeIcon(n.notification_type) }} {{ typeLabel(n.notification_type) }}
+              {{ typeLabel(n.notification_type) }}
             </div>
             <div class="notif-title">{{ n.title }}</div>
             <div class="notif-time">{{ n.created_at | date:'short' }}</div>
@@ -121,11 +121,6 @@ export class NotificationPopoverComponent implements OnInit, OnDestroy {
   }
 
   onOutsideClick = (): void => { this.open = false; };
-
-  typeIcon(type: string): string {
-    const m: any = { INSTANCE_ASSIGNED: '📥', TASK_READY: '📋', TASK_COMPLETED: '✅', INSTANCE_MOVED: '➡️', INSTANCE_COMPLETED: '🏁', INSTANCE_CANCELLED: '❌' };
-    return m[type] || '📌';
-  }
 
   typeLabel(type: string): string {
     const m: any = { INSTANCE_ASSIGNED: 'Assigned', TASK_READY: 'Task Ready', TASK_COMPLETED: 'Task Done', INSTANCE_MOVED: 'Moved', INSTANCE_COMPLETED: 'Completed', INSTANCE_CANCELLED: 'Cancelled' };

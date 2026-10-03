@@ -9,7 +9,7 @@ import { WorkflowTemplate, Station, TransitionDetail } from '../../../shared/mod
   template: `
     <div *ngIf="template">
       <!-- Header -->
-      <div class="flex justify-between items-start mb-6">
+      <div class="flex justify-between items-start mb-6 toolbar">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-1">
             <h1 class="page-title" style="margin-bottom:0;">{{ template.name }}</h1>
@@ -27,7 +27,7 @@ import { WorkflowTemplate, Station, TransitionDetail } from '../../../shared/mod
             {{ template.instance_count }} instances · Created {{ template.created_at | date:'mediumDate' }}
           </p>
         </div>
-        <a class="btn btn-outline btn-sm" routerLink="/templates">← All Templates</a>
+        <a class="btn btn-outline btn-sm" routerLink="/templates">All Templates</a>
       </div>
 
       <!-- Admin Actions (elevated, contextual) -->
@@ -123,7 +123,7 @@ import { WorkflowTemplate, Station, TransitionDetail } from '../../../shared/mod
                  style="padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-light);"
                  [style.border-bottom]="last ? 'none' : ''">
               <span class="text-sm font-medium">{{ t.from_station.name }}</span>
-              <span class="text-xs text-muted">→</span>
+              <span class="text-xs text-muted">to</span>
               <span class="text-sm font-medium">{{ t.to_station.name }}</span>
               <span *ngIf="t.label" class="badge badge-info badge-sm">{{ t.label }}</span>
             </div>

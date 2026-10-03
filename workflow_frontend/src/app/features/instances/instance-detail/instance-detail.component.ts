@@ -22,7 +22,6 @@ import {
 
     <!-- Error state -->
     <div *ngIf="error && !loading" class="empty-state">
-      <div class="empty-state-icon">⚠️</div>
       <p class="empty-state-title">Failed to Load Instance</p>
       <p class="empty-state-desc">{{ error }}</p>
       <button class="btn btn-primary" (click)="retry()">Retry</button>
@@ -31,7 +30,7 @@ import {
 
     <div *ngIf="instance">
       <!-- ═══ HEADER: Reference, Status, Meta ═══ -->
-      <div class="flex justify-between items-start mb-4">
+      <div class="flex justify-between items-start mb-4 detail-head">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-1">
             <h1 class="page-title" style="margin-bottom:0;">{{ instance.reference }}</h1>
@@ -49,19 +48,19 @@ import {
             · {{ instance.created_at | date:'mediumDate' }}
           </p>
         </div>
-        <button class="btn btn-outline btn-sm" *ngIf="!standalone" [routerLink]="['/instances']">← All Instances</button>
+        <button class="btn btn-outline btn-sm" *ngIf="!standalone" [routerLink]="['/instances']">All Instances</button>
       </div>
 
       <!-- ═══ SHARE LINK ═══ -->
       <div class="card mb-4" *ngIf="instance.public_token && !standalone" style="border-left:4px solid var(--primary);">
         <div class="card-body" style="padding:var(--space-3) var(--space-5);">
           <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold">🔗 Share Link</span>
+            <span class="text-sm font-semibold">Share Link</span>
             <code style="background:var(--bg-hover);padding:4px 8px;border-radius:4px;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
               {{ publicUrl }}
             </code>
-            <button class="btn btn-outline btn-xs" (click)="copyLink()">{{ copied ? '✓ Copied!' : 'Copy' }}</button>
-            <a class="btn btn-ghost btn-xs" [href]="publicUrl" target="_blank">Open ↗</a>
+            <button class="btn btn-outline btn-xs" (click)="copyLink()">{{ copied ? 'Copied!' : 'Copy' }}</button>
+            <a class="btn btn-ghost btn-xs" [href]="publicUrl" target="_blank">Open</a>
           </div>
           <p class="text-xs text-muted mt-1">Users with the right station roles can access this instance via the link above.</p>
         </div>
@@ -82,9 +81,8 @@ import {
                 <div class="progress-dot" [class.completed]="s.status==='COMPLETED'"
                      [class.current]="s.status==='CURRENT'" [class.blocked]="s.status==='BLOCKED'">
                   <ng-container [ngSwitch]="s.status">
-                    <span *ngSwitchCase="'COMPLETED'">✓</span>
-                    <span *ngSwitchCase="'CURRENT'">◉</span>
-                    <span *ngSwitchDefault>{{ s.station.order || '○' }}</span>
+                    <svg *ngSwitchCase="'COMPLETED'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span *ngSwitchDefault>{{ s.station.order }}</span>
                   </ng-container>
                 </div>
                 <span class="progress-step-label">{{ s.station.name }}</span>
@@ -95,7 +93,7 @@ import {
           <!-- Current station info -->
           <div *ngIf="instance.current_station_info" class="flex items-center gap-3 mt-3 p-3"
                style="background:var(--primary-light);border-radius:var(--radius-md);">
-            <span style="font-size:1rem;">📍</span>
+            
             <div>
               <span class="text-sm font-semibold" style="color:var(--primary);">
                 Current: {{ instance.current_station_info.name }}
@@ -112,7 +110,7 @@ import {
       <div class="card mb-4" *ngIf="instance.status === 'ACTIVE' && transitions"
            style="border-left:4px solid var(--primary);">
         <div class="card-body" style="padding:var(--space-4) var(--space-5);">
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center action-bar">
             <div>
               <span class="font-semibold text-md">Move Workflow Forward</span>
               <span *ngIf="!transitions.can_move" class="badge badge-warning" style="margin-left:8px;">
@@ -122,7 +120,7 @@ import {
                 {{ instance.user_permissions.reason_if_blocked }}
               </span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 action-bar-buttons">
               <button *ngFor="let t of transitions.transitions"
                       class="btn"
                       [class.btn-success]="isForwardTransition(t)"
@@ -142,7 +140,7 @@ import {
       </div>
 
       <!-- ═══ TWO-COLUMN LAYOUT: Tasks + Sidebar ═══ -->
-      <div class="grid" style="grid-template-columns:1fr 320px;gap:var(--space-4);">
+      <div class="grid detail-grid">
 
         <!-- LEFT: Tasks & Content -->
         <div>
@@ -164,7 +162,7 @@ import {
             <!-- Pending Tasks Header -->
             <div *ngIf="pendingTasks.length > 0 && instance.status === 'ACTIVE'" class="mb-3">
               <div class="text-sm font-semibold text-warning mb-2">
-                ⏳ {{ pendingTasks.length }} task{{ pendingTasks.length > 1 ? 's' : '' }} pending at this station
+                {{ pendingTasks.length }} task{{ pendingTasks.length > 1 ? 's' : '' }} pending at this station
               </div>
             </div>
 
@@ -191,10 +189,10 @@ import {
                         <span class="font-medium">{{ item.value }}</span>
                       </div>
                       <div *ngIf="hasDocs(t)" class="mt-1 text-xs text-muted">
-                        📎 {{ t.documents_info?.length }} file(s): {{ joinFileNames(t.documents_info || []) }}
+                        {{ t.documents_info?.length }} file(s): {{ joinFileNames(t.documents_info || []) }}
                       </div>
                       <div *ngIf="t.remarks" class="mt-1 text-xs text-muted">
-                        💬 {{ t.remarks }}
+                        {{ t.remarks }}
                       </div>
                     </div>
                   </div>
@@ -207,7 +205,7 @@ import {
                     </span>
                     <button *ngIf="canAct && t.status !== 'COMPLETED'"
                             class="btn btn-primary btn-sm" (click)="$event.stopPropagation(); openTask(t)">
-                      {{ t.status === 'PENDING' ? 'Start' : 'Continue' }} →
+                      {{ t.status === 'PENDING' ? 'Start' : 'Continue' }}
                     </button>
                   </div>
                 </div>
@@ -216,7 +214,7 @@ import {
 
             <!-- Empty Tasks -->
             <div *ngIf="tasks.length === 0" class="empty-state">
-              <div class="empty-state-icon">📋</div>
+              
               <div class="empty-state-title">No tasks at this station</div>
               <div class="empty-state-desc">
                 <ng-container *ngIf="instance.status === 'COMPLETED'">
@@ -234,7 +232,7 @@ import {
             <!-- Upload Zone (only if active) -->
             <div class="card mb-3" *ngIf="instance.status === 'ACTIVE'">
               <div class="card-body">
-                <div class="flex gap-2 items-center">
+                <div class="flex gap-2 items-center flex-wrap">
                   <label class="file-upload-zone" style="flex:1;padding:var(--space-3);">
                     <span class="text-sm text-muted">{{ selectedFile ? selectedFile.name : 'Click to choose a file... (max 1 MB)' }}</span>
                     <input type="file" (change)="onFileSelected($event)" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
@@ -249,13 +247,13 @@ import {
 
             <!-- Document List -->
             <div class="card" *ngIf="documents.length > 0">
-              <div class="card-body-flush">
+              <div class="card-body-flush table-responsive">
                 <table class="table">
                   <thead><tr><th>File</th><th>Station</th><th>Uploaded By</th><th>Date</th><th></th></tr></thead>
                   <tbody>
                     <tr *ngFor="let d of documents">
                       <td>
-                        <div class="font-medium">📄 {{ d.original_filename }}</div>
+                        <div class="font-medium">{{ d.original_filename }}</div>
                         <div class="text-xs text-muted">{{ d.file_size_display }}</div>
                       </td>
                       <td><span class="badge badge-neutral badge-sm">{{ d.station.name }}</span></td>
@@ -269,7 +267,7 @@ import {
             </div>
 
             <div *ngIf="documents.length === 0" class="empty-state">
-              <div class="empty-state-icon">📎</div>
+              
               <div class="empty-state-title">No documents</div>
               <div class="empty-state-desc">Upload files to maintain an evidence trail across workflow stations.</div>
             </div>
@@ -278,7 +276,7 @@ import {
           <!-- Audit Log Tab -->
           <div *ngIf="activeTab === 'log'">
             <div class="card" *ngIf="history.length > 0">
-              <div class="card-body-flush">
+              <div class="card-body-flush table-responsive">
                 <table class="table">
                   <thead><tr><th>#</th><th>When</th><th>Action</th><th>By</th><th>Details</th></tr></thead>
                   <tbody>
@@ -289,7 +287,7 @@ import {
                       <td class="text-sm">{{ h.action_by_name }}</td>
                       <td class="text-sm">
                         <ng-container [ngSwitch]="h.action">
-                          <span *ngSwitchCase="'MOVED'">{{ h.from_station_name }} → {{ h.to_station_name }}</span>
+                          <span *ngSwitchCase="'MOVED'">{{ h.from_station_name }} to {{ h.to_station_name }}</span>
                           <span *ngSwitchCase="'TASK_COMPLETED'">{{ h.task_name }}</span>
                           <span *ngSwitchCase="'INSTANCE_CREATED'">Workflow initiated</span>
                           <span *ngSwitchDefault>{{ h.remarks }}</span>
@@ -301,7 +299,7 @@ import {
               </div>
             </div>
             <div *ngIf="history.length === 0" class="empty-state">
-              <div class="empty-state-icon">📜</div>
+              
               <div class="empty-state-title">No history recorded</div>
               <div class="empty-state-desc">History entries appear as the workflow progresses through stations.</div>
             </div>
@@ -347,7 +345,7 @@ import {
           <div class="card mb-3" *ngIf="!canAct && instance.user_permissions?.reason_if_blocked"
                style="border-left:3px solid var(--warning);">
             <div class="card-body" style="padding:var(--space-4);">
-              <div class="text-sm font-semibold text-warning mb-1">⚠ Action Restricted</div>
+              <div class="text-sm font-semibold text-warning mb-1">Action Restricted</div>
               <p class="text-xs text-muted">{{ instance.user_permissions.reason_if_blocked }}</p>
             </div>
           </div>
