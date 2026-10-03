@@ -1,0 +1,445 @@
+/* =============================================================================
+ * Enterprise Workflow Management — pre-login landing.
+ *
+ * Scoped to this component via :host so nothing outside the landing route is
+ * affected. Mirrors the shared front-page design standard (banking UI
+ * reference); the token block below is copied verbatim except for the two
+ * accent values, which match this app's branded Keycloak theme.
+ * ========================================================================== */
+
+:host {
+  color-scheme: light;
+
+  /* ---- Tokens: this app's OWN design system (src/styles.scss) ----
+   * The shared front-page standard governs structure and density, not
+   * another app's palette. Inter + the platform's neutral ramp + --primary
+   * #4f46e5, so the landing and the signed-in app are the same product. */
+  --bg: #f8f9fb;          /* var(--bg-app) */
+  --surface: #ffffff;     /* var(--bg-surface) */
+  --surface-2: #f4f5f7;   /* var(--bg-hover) */
+  --ink: #1a1a2e;         /* var(--text-primary) */
+  --ink-2: #4a4a5a;       /* var(--text-secondary) */
+  --muted: #8a8a9a;       /* var(--text-tertiary) */
+  --faint: #b0b0bc;       /* var(--text-disabled) */
+  --line: #e4e5e7;        /* var(--border-default) */
+  --line-2: #d0d1d3;      /* var(--border-strong) */
+
+  /* the one accent — links, focus, the primary action */
+  --accent: #4f46e5;        /* var(--primary) */
+  --accent-strong: #4338ca; /* var(--primary-hover) */
+  --on-accent: #ffffff;
+
+  /* meaning colours */
+  --credit: #059669;      /* var(--success) */
+  --credit-bg: #d1fae5;   /* var(--success-light) */
+  --debit: #dc2626;       /* var(--danger) */
+  --debit-bg: #fee2e2;    /* var(--danger-light) */
+  --warn: #d97706;        /* var(--warning) */
+  --warn-bg: #fef3c7;     /* var(--warning-light) */
+
+  --radius: 4px;          /* var(--radius-sm) */
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+
+  display: block;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.landing {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- top bar ---------------------------------------------------------------- */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  margin-right: auto;
+}
+
+.brand-mark {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.brand-sub {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---- layout ----------------------------------------------------------------- */
+.page {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+}
+
+.page-head {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.page-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.page-sub {
+  font-size: 0.875rem;
+  color: var(--muted);
+  max-width: 640px;
+}
+
+.section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 24px 0 8px;
+}
+
+/* ---- entry block (the sign-in point, after the lede) ------------------------ */
+/* Column, matching the other apps: value line, then the action, then fine print. */
+.lp-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.lp-entry-copy {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.lp-entry-hint {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ---- architecture tiers ----------------------------------------------------- */
+.arch {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.tier-label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.node {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.node .mono {
+  font-weight: 500;
+}
+
+.node-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.node-grid .node {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.arrow {
+  margin: 8px 0;
+  padding-left: 12px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* mono identifiers + port chips (the app's instrument character) */
+.mono {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+
+.port {
+  display: inline-block;
+  margin-left: 4px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  padding: 0 5px;
+}
+
+/* ---- numbered walkthrough --------------------------------------------------- */
+.steps {
+  margin: 0;
+  padding-left: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.steps li {
+  margin-bottom: 10px;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.steps li::marker {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.steps b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---- capability groups (hairline-separated list) ---------------------------- */
+.caps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.cap {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cap:last-child {
+  border-bottom: 0;
+}
+
+.cap-label {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cap-label.mono {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+.cap-body {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---- technology line + role note -------------------------------------------- */
+.text-muted {
+  color: var(--muted);
+}
+
+.role-note {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin: 0 0 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.stack {
+  margin: 24px 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ---- primary action ---------------------------------------------------------- */
+.primary-action {
+  margin-top: 32px;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ---- buttons ----------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.12s ease, border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--line-2);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.8125rem;
+}
+
+/* ---- footer ------------------------------------------------------------------ */
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.footer a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer a:hover {
+  color: var(--ink);
+}
+
+/* ---- responsive: widen out from a single column ------------------------------ */
+@media (min-width: 640px) {
+  .page {
+    padding: 32px 24px 64px;
+  }
+
+  .node-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .caps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+@media (min-width: 960px) {
+  .tier {
+    padding: 14px 16px;
+  }
+}

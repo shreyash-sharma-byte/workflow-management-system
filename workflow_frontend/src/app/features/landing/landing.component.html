@@ -1,0 +1,174 @@
+<div class="landing">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="brand">
+        <span class="brand-mark">Workflow</span>
+        <span class="brand-sub">management platform</span>
+      </span>
+
+      <div class="topbar-right">
+        <button type="button" class="btn btn-primary btn-sm" (click)="signIn()">Sign in</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <p class="eyebrow">Workflow platform</p>
+      <h1 class="page-title">Enterprise Workflow Management</h1>
+      <p class="page-sub">
+        A workflow is authored once as a template of stations, typed tasks and directed
+        transitions, then executed as tracked instances by a server-side engine that gates
+        every move by role, pins the version, and writes an append-only audit trail. Built
+        for teams that need a workflow to move exactly as designed &mdash; and to be able to
+        prove it did.
+      </p>
+    </div>
+
+    <div class="lp-entry">
+      <p class="lp-entry-copy">Sign in opens a running application with real data &mdash; not a mock-up.</p>
+      <button type="button" class="btn btn-primary" (click)="signIn()">Sign in</button>
+      <p class="lp-entry-hint">Demo credentials are available on request.</p>
+    </div>
+
+    <section aria-labelledby="wf-arch">
+      <h2 class="section-title" id="wf-arch">Architecture</h2>
+
+      <div class="arch">
+        <div class="tier">
+          <span class="tier-label">Client</span>
+          <span class="node"><span class="mono">workflow_frontend</span> &mdash; Angular 17 SPA <span class="port">:4200</span> (TypeScript, keycloak-angular)</span>
+        </div>
+
+        <p class="arrow">HTTPS &middot; JWT bearer &darr;</p>
+
+        <div class="tier">
+          <span class="tier-label">API</span>
+          <span class="node"><span class="mono">Django 4.2 + Django REST framework</span> <span class="port">:8000</span> &mdash; JWT auth, drf-spectacular OpenAPI schema, CORS whitelist, per-scope rate limits, input-sanitizer middleware</span>
+        </div>
+
+        <p class="arrow">/api/v1/** &middot; viewset &rarr; engine &darr;</p>
+
+        <div class="tier tier--stack">
+          <span class="tier-label">Application &mdash; workflow engine</span>
+          <ul class="node-grid">
+            <li class="node"><span class="mono">apps.workflows</span> &mdash; template registry: templates, version snapshots, stations, transitions, task definitions</li>
+            <li class="node"><span class="mono">apps.instances.engine</span> &mdash; <span class="mono">WorkflowEngine</span>: instance lifecycle, 5-check move validation, optimistic locking</li>
+            <li class="node"><span class="mono">apps.instances.permissions</span> &mdash; role gates: <span class="mono">IsAdmin</span> &middot; <span class="mono">IsInitiator</span> &middot; <span class="mono">IsStationOwner</span> &middot; <span class="mono">CanViewInstance</span></li>
+            <li class="node"><span class="mono">WorkflowInstanceHistory</span> &mdash; audit writer: append-only, enforced at the model layer</li>
+            <li class="node"><span class="mono">apps.notifications</span> &mdash; in-app + email on assignment, move, completion, cancellation</li>
+            <li class="node"><span class="mono">apps.documents</span> &mdash; document trail: MIME whitelist, 1&nbsp;MB cap, immutable</li>
+          </ul>
+        </div>
+
+        <p class="arrow">Django ORM &middot; PostgreSQL &darr;</p>
+
+        <div class="tier">
+          <span class="tier-label">Data</span>
+          <span class="node"><span class="mono">PostgreSQL 16</span> <span class="port">:5432</span> &mdash; 10 models. <span class="mono">workflows</span> owns template / version / station / transition / task; <span class="mono">instances</span> owns instance / history / task-execution; <span class="mono">documents</span>, <span class="mono">notifications</span> and <span class="mono">accounts</span> own the rest.</span>
+        </div>
+
+        <p class="arrow">JWT RS256 &middot; realm role sync &darr;</p>
+
+        <div class="tier">
+          <span class="tier-label">Identity</span>
+          <span class="node"><span class="mono">Keycloak</span> &mdash; OIDC SSO &middot; realm <span class="mono">workflow-realm</span> &middot; client <span class="mono">workflow-platform</span> &middot; 9 realm roles &middot; roles re-synced to Django Groups on every request</span>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="wf-run">
+      <h2 class="section-title" id="wf-run">What happens when an instance runs</h2>
+      <ol class="steps">
+        <li><b>Select a published version.</b> <span class="mono">POST /api/v1/instances/</span> resolves the template's <span class="mono">current_version</span> &mdash; the frozen publish snapshot, never a live draft. Editing a published template runs <span class="mono">create_draft</span>, which deep-clones the snapshot into a new version; <span class="mono">publish</span> freezes it. An instance pins its <span class="mono">template_version</span> with <span class="mono">on_delete=PROTECT</span>, so editing a template never mutates the version a running instance holds.</li>
+        <li><b>The engine creates the instance.</b> <span class="mono">WorkflowEngine.create_instance</span> finds the <span class="mono">START</span> station (refusing with <span class="mono">no_start_station</span> if none), writes the instance as <span class="mono">ACTIVE</span> at that station with a generated <span class="mono">reference</span> (WF-N), <span class="mono">version=1</span>, a UUID <span class="mono">public_token</span>, an <span class="mono">INSTANCE_CREATED</span> history row, and a <span class="mono">PENDING</span> <span class="mono">TaskExecution</span> for every task at the start station.</li>
+        <li><b>Only the station's roles can act.</b> <span class="mono">IsStationOwner</span> on the task and move endpoints, and <span class="mono">_validate_user_permission</span> inside the engine, both intersect the caller's Django groups with <span class="mono">station.allowed_roles</span>. A mismatch is a server-side 403 &mdash; independent of what the UI hides.</li>
+        <li><b>Tasks run a state machine.</b> <span class="mono">PENDING &rarr; IN_PROGRESS &rarr; COMPLETED</span> via <span class="mono">start</span> and <span class="mono">submit</span>. <span class="mono">submit</span> validates the response against the task's <span class="mono">task_config</span> schema &mdash; FORM required fields, CONFIRMATION required checklist items, DOCUMENT <span class="mono">min_files</span>, APPROVAL <span class="mono">decision</span> must be one of the configured options &mdash; then writes <span class="mono">TASK_COMPLETED</span>.</li>
+        <li><b>A move is five ordered checks.</b> <span class="mono">POST /api/v1/instances/:id/move/</span> enters <span class="mono">WorkflowEngine.move</span>: the instance is <span class="mono">ACTIVE</span>, the caller holds a role at the current station, a <span class="mono">Transition</span> exists from current to target (else 400 with <span class="mono">allowed_transitions</span>), every <span class="mono">is_required</span> task is <span class="mono">COMPLETED</span> (else <span class="mono">tasks_incomplete</span> with the pending list), and the optimistic lock matches.</li>
+        <li><b>The move is atomic and rejects stale writes.</b> <span class="mono">_execute_move</span> runs in one <span class="mono">transaction.atomic()</span>: it updates <span class="mono">current_station</span> only where the row's <span class="mono">version</span> still equals the one it read &mdash; zero rows matched returns 409 <span class="mono">concurrency_conflict</span>, so two users can't double-move &mdash; then bumps <span class="mono">version = version + 1</span>, writes a <span class="mono">MOVED</span> history row, auto-creates the new station's <span class="mono">PENDING</span> tasks, and notifies the new station's roles.</li>
+        <li><b>Approval, rejection, completion.</b> An <span class="mono">APPROVAL</span> task stores its <span class="mono">decision</span> (validated against the version's options &mdash; default <span class="mono">Approved</span> / <span class="mono">Rejected</span>) in <span class="mono">response_data</span> and the audit trail; the outcome is data, not a hidden branch &mdash; what happens next is the transition the station actor takes. Reaching an <span class="mono">END</span> station flips <span class="mono">status &rarr; COMPLETED</span> and stamps <span class="mono">completed_at</span> (<span class="mono">INSTANCE_COMPLETED</span>); <span class="mono">cancel</span> is the other exit &mdash; <span class="mono">ACTIVE &rarr; CANCELLED</span>, with the reason written to history.</li>
+        <li><b>The audit trail is append-only.</b> <span class="mono">INSTANCE_CREATED</span>, <span class="mono">TASK_STARTED</span>, <span class="mono">TASK_COMPLETED</span>, <span class="mono">MOVED</span>, <span class="mono">DOCUMENT_UPLOADED</span>, <span class="mono">INSTANCE_CANCELLED</span> and <span class="mono">INSTANCE_COMPLETED</span> each append a <span class="mono">WorkflowInstanceHistory</span> row carrying actor, from/to station, task, remarks and a metadata summary. Its <span class="mono">save()</span> raises on any update, and <span class="mono">Document.delete()</span> raises too &mdash; the trail can't be edited, not even by an admin or the ORM.</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="wf-roles">
+      <h2 class="section-title" id="wf-roles">Roles &amp; permissions</h2>
+      <p class="text-muted role-note">
+        Nine realm roles, enforced server-side &mdash; not by hiding UI. DRF permission classes
+        gate the endpoint, the engine re-checks inside <span class="mono">move</span> and
+        <span class="mono">submit</span>, and Keycloak is the source of truth:
+        <span class="mono">realm_access.roles</span> is synced to Django Groups on every request,
+        so a removed role is gone on the next call.
+      </p>
+      <ul class="caps">
+        <li class="cap"><span class="cap-label mono">ADMIN</span><span class="cap-body">Full CRUD on templates and publish; create, move and cancel any instance; execute any task.</span></li>
+        <li class="cap"><span class="cap-label mono">PM_TEAM</span><span class="cap-body">Create instances (<span class="mono">IsInitiator</span>); no template or station write access; sees the instances it initiated.</span></li>
+        <li class="cap"><span class="cap-label mono">PM_MANAGER</span><span class="cap-body">Create instances; no template write access; sees its own initiated instances.</span></li>
+        <li class="cap"><span class="cap-label mono">DEV_TEAM</span><span class="cap-body">Execute tasks and move at stations whose <span class="mono">allowed_roles</span> include DEV_TEAM (<span class="mono">IsStationOwner</span>).</span></li>
+        <li class="cap"><span class="cap-label mono">DEV_LEAD</span><span class="cap-body">Execute tasks and move at stations listing DEV_LEAD.</span></li>
+        <li class="cap"><span class="cap-label mono">QA_TEAM</span><span class="cap-body">Execute tasks and move at stations listing QA_TEAM.</span></li>
+        <li class="cap"><span class="cap-label mono">QA_MANAGER</span><span class="cap-body">Execute tasks and move at stations listing QA_MANAGER.</span></li>
+        <li class="cap"><span class="cap-label mono">DEV_OPS</span><span class="cap-body">Execute tasks and move at stations listing DEV_OPS.</span></li>
+        <li class="cap"><span class="cap-label mono">AUDITOR</span><span class="cap-body">Read-only: sees all instances and history, but cannot create, move or execute.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="wf-model">
+      <h2 class="section-title" id="wf-model">Data model</h2>
+      <ul class="caps">
+        <li class="cap"><span class="cap-label mono">WorkflowTemplate</span><span class="cap-body">DRAFT / PUBLISHED / ARCHIVED metadata; points at <span class="mono">current_version</span> and <span class="mono">draft_version</span>.</span></li>
+        <li class="cap"><span class="cap-label mono">WorkflowTemplateVersion</span><span class="cap-body">Immutable publish snapshot; unique (template, version_number); <span class="mono">next_draft</span> links the fork chain.</span></li>
+        <li class="cap"><span class="cap-label mono">Station</span><span class="cap-body">A stage with START / NORMAL / END type; <span class="mono">allowed_roles</span> (M2M to Group) gates who may act.</span></li>
+        <li class="cap"><span class="cap-label mono">Transition</span><span class="cap-body">Directed <span class="mono">from_station &rarr; to_station</span> edge; <span class="mono">remarks_required</span> flag; unique per version.</span></li>
+        <li class="cap"><span class="cap-label mono">TaskDefinition</span><span class="cap-body">Typed task config (<span class="mono">task_type</span>, <span class="mono">is_required</span>, <span class="mono">task_config</span> JSON); <span class="mono">allowed_roles</span> subset of the station's.</span></li>
+        <li class="cap"><span class="cap-label mono">WorkflowInstance</span><span class="cap-body">The run. Source of truth for status: ACTIVE / COMPLETED / CANCELLED / BLOCKED are declared; the engine writes ACTIVE on create, COMPLETED on END, CANCELLED on cancel.</span></li>
+        <li class="cap"><span class="cap-label mono">TaskExecution</span><span class="cap-body">Runtime task with PENDING / IN_PROGRESS / COMPLETED / FAILED / SKIPPED status; <span class="mono">response_data</span>; its own <span class="mono">version</span> lock.</span></li>
+        <li class="cap"><span class="cap-label mono">WorkflowInstanceHistory</span><span class="cap-body">Append-only audit (9 action types); <span class="mono">save()</span> raises on update.</span></li>
+        <li class="cap"><span class="cap-label mono">Document</span><span class="cap-body">Immutable file trail; <span class="mono">delete()</span> raises.</span></li>
+        <li class="cap"><span class="cap-label mono">Notification &middot; User</span><span class="cap-body">In-app events per recipient; User is auto-provisioned from the Keycloak <span class="mono">sub</span> claim.</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="wf-decisions">
+      <h2 class="section-title" id="wf-decisions">Decisions, not just features</h2>
+      <ul class="caps">
+        <li class="cap"><span class="cap-label">Immutable snapshots + draft forking</span><span class="cap-body">A published template is frozen; edits clone into a new draft version and <span class="mono">publish</span> links the old via <span class="mono">next_draft</span>. Instances hold their version with <span class="mono">on_delete=PROTECT</span>, so a running workflow can't be corrupted by a template edit.</span></li>
+        <li class="cap"><span class="cap-label">Optimistic locking by integer version</span><span class="cap-body"><span class="mono">UPDATE &hellip; WHERE version = ?</span> returns zero rows on a stale write, which the engine turns into a 409 <span class="mono">concurrency_conflict</span> &mdash; never a silent double-move.</span></li>
+        <li class="cap"><span class="cap-label">Append-only enforced in the model</span><span class="cap-body"><span class="mono">WorkflowInstanceHistory.save()</span> and <span class="mono">Document.delete()</span> both raise. Immutability is a constraint, not a convention &mdash; no admin or ORM path can edit the trail.</span></li>
+        <li class="cap"><span class="cap-label">Roles are a server boundary, twice</span><span class="cap-body">DRF permission classes gate the endpoint and the engine re-checks inside <span class="mono">move</span> / <span class="mono">submit</span>, so a 403 is returned by the API even when a route is reached directly.</span></li>
+        <li class="cap"><span class="cap-label">One engine, one transaction</span><span class="cap-body">Move, history write, status flip and new-task creation commit together in <span class="mono">transaction.atomic()</span>, so a crash can't leave a half-moved instance.</span></li>
+        <li class="cap"><span class="cap-label">Publish-time graph validation</span><span class="cap-body"><span class="mono">publish</span> refuses a template without exactly one START, at least one END, or with a stranded station that has no outgoing transition &mdash; a workflow that can't complete can't be shipped.</span></li>
+      </ul>
+    </section>
+
+    <p class="stack">
+      9 realm roles &middot; 11 Django models &middot; Django 4.2 + Django REST framework &middot;
+      PostgreSQL 16 &middot; Keycloak OIDC (JWT RS256) &middot; Angular 17 &middot; keycloak-angular &middot;
+      4 task types
+    </p>
+
+    <div class="primary-action">
+      <button type="button" class="btn btn-primary" (click)="signIn()">Sign in</button>
+      <p class="hint">Demo credentials are available on request.</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>
+      Made by
+      <a
+        href="https://github.com/shreyashsharmaprojects-del"
+        target="_blank"
+        rel="noopener"
+        title="GitHub — shreyashsharmaprojects-del"
+        >Shreyash Sharma</a
+      >
+      ·
+      <a href="https://www.linkedin.com/in/shreyash-sharma-908b741a9" target="_blank" rel="noopener"
+        >LinkedIn</a
+      >
+      ·
+      <a href="mailto:shreyashms2501&#64;gmail.com">shreyashms2501&#64;gmail.com</a>
+    </span>
+  </footer>
+</div>
