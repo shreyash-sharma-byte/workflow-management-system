@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
@@ -13,6 +13,11 @@ interface BreadcrumbSegment {
   template: `
     <header class="app-header">
       <div class="header-left">
+        <!-- Mobile nav toggle -->
+        <button class="mobile-menu-btn" (click)="toggleSidebar.emit()" aria-label="Open navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+
         <!-- Dynamic Breadcrumb -->
         <nav class="header-breadcrumb">
           <ng-container *ngFor="let seg of breadcrumbs; let last = last">
@@ -38,8 +43,8 @@ interface BreadcrumbSegment {
 
         <!-- User Menu -->
         <div class="flex items-center gap-2">
-          <span class="text-sm text-secondary font-medium">{{ auth.username }}</span>
-          <span class="badge" [class.badge-primary]="auth.isAdmin" [class.badge-neutral]="!auth.isAdmin">
+          <span class="header-user-meta text-sm text-secondary font-medium">{{ auth.username }}</span>
+          <span class="header-user-meta badge" [class.badge-primary]="auth.isAdmin" [class.badge-neutral]="!auth.isAdmin">
             {{ auth.isAdmin ? 'Admin' : (auth.roles[0] || 'User') }}
           </span>
           <button class="btn btn-ghost btn-sm" (click)="auth.logout()">
@@ -51,6 +56,7 @@ interface BreadcrumbSegment {
   `,
 })
 export class HeaderComponent {
+  @Output() toggleSidebar = new EventEmitter<void>();
   breadcrumbs: BreadcrumbSegment[] = [];
   unreadCount = 0;
 

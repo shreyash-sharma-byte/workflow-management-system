@@ -95,11 +95,15 @@ h1{font-size:var(--font-3xl)}h2{font-size:var(--font-2xl)}h3{font-size:var(--fon
 .font-medium{font-weight:var(--weight-medium)}.font-semibold{font-weight:var(--weight-semibold)}.font-bold{font-weight:var(--weight-bold)}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.app-layout{display:flex;min-height:100vh}
+/* Shell rows are allowed to shrink below their content's intrinsic width.
+   Every direct child of the shell therefore needs `min-width: 0`, or the
+   main column is sized by its widest descendant (tables, filter bars) and
+   the whole page scrolls sideways on a phone. */
+.app-layout{display:flex;min-height:100vh;min-width:0}
 .app-sidebar{width:var(--sidebar-width);background:var(--bg-surface);border-right:1px solid var(--border-default);position:fixed;top:0;left:0;bottom:0;z-index:var(--z-sidebar);display:flex;flex-direction:column;overflow-y:auto}
-.app-main{margin-left:var(--sidebar-width);flex:1;min-height:100vh;display:flex;flex-direction:column}
-.app-header{height:var(--header-height);background:var(--bg-surface);border-bottom:1px solid var(--border-default);display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-6);position:sticky;top:0;z-index:var(--z-header)}
-.app-content{flex:1;padding:var(--space-6) var(--space-8);max-width:var(--content-max);width:100%;margin:0 auto}
+.app-main{margin-left:var(--sidebar-width);flex:1 1 0;min-width:0;min-height:100vh;display:flex;flex-direction:column}
+.app-header{height:var(--header-height);background:var(--bg-surface);border-bottom:1px solid var(--border-default);display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);min-width:0;padding:0 var(--space-6);position:sticky;top:0;z-index:var(--z-header)}
+.app-content{flex:1;padding:var(--space-6) var(--space-8);max-width:var(--content-max);width:100%;min-width:0;margin:0 auto}
 
 .sidebar-brand{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4) var(--space-4) var(--space-6)}
 .sidebar-brand-icon{width:32px;height:32px;background:var(--primary);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:white;font-size:var(--font-lg);font-weight:var(--weight-bold)}
@@ -119,13 +123,13 @@ h1{font-size:var(--font-3xl)}h2{font-size:var(--font-2xl)}h3{font-size:var(--fon
 .sidebar-user-name{font-size:var(--font-sm);font-weight:var(--weight-medium);color:var(--text-primary)}
 .sidebar-user-role{font-size:var(--font-xs);color:var(--text-tertiary)}
 
-.header-left{display:flex;align-items:center;gap:var(--space-4)}
+.header-left{display:flex;align-items:center;gap:var(--space-4);min-width:0}
 .header-breadcrumb{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-sm);color:var(--text-tertiary)}
 .header-breadcrumb a{color:var(--text-tertiary);text-decoration:none}
 .header-breadcrumb a:hover{color:var(--text-primary)}
 .header-breadcrumb .separator{color:var(--text-disabled)}
 .header-breadcrumb .current{color:var(--text-primary);font-weight:var(--weight-medium)}
-.header-right{display:flex;align-items:center;gap:var(--space-2)}
+.header-right{display:flex;align-items:center;gap:var(--space-2);min-width:0}
 .header-action-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:var(--radius-md);border:none;background:transparent;color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);position:relative}
 .header-action-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
 .header-action-btn .badge-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:2px solid var(--bg-surface)}
@@ -255,3 +259,70 @@ h1{font-size:var(--font-3xl)}h2{font-size:var(--font-2xl)}h3{font-size:var(--fon
 
 @media(max-width:1024px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}.app-content{padding:var(--space-4)}}
 @media(max-width:768px){.app-sidebar{transform:translateX(-100%);transition:transform var(--transition-base)}.app-main{margin-left:0}.app-content{padding:var(--space-3)}.stats-grid{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive additions — mobile navigation drawer + adaptive tables/forms.
+   Additive: desktop layouts are unchanged above 768px.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Mobile nav toggle (hidden on desktop) */
+.mobile-menu-btn{display:none;width:34px;height:34px;align-items:center;justify-content:center;border:none;background:transparent;border-radius:var(--radius-md);color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);flex-shrink:0}
+.mobile-menu-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+.mobile-menu-btn:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}
+
+/* Sidebar drawer close affordance (mobile only) */
+.sidebar-close{display:none;margin-left:auto;width:30px;height:30px;align-items:center;justify-content:center;border:none;background:transparent;border-radius:var(--radius-sm);color:var(--text-tertiary);cursor:pointer;flex-shrink:0}
+.sidebar-close:hover{background:var(--bg-hover);color:var(--text-primary)}
+
+/* Drawer backdrop (mobile only) */
+.mobile-backdrop{display:none}
+
+/* Headers with action buttons wrap instead of overflowing */
+.toolbar{flex-wrap:wrap;row-gap:var(--space-2)}
+
+/* Two-column layouts collapse on narrow screens */
+.detail-grid{grid-template-columns:1fr 320px;gap:var(--space-4)}
+@media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
+
+/* Scrollable table region with a visible scrollbar affordance.
+   `max-width:100%` keeps a wide table from sizing its own container — the
+   table scrolls inside the card instead of pushing the page sideways. */
+.table-responsive{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) var(--border-light)}
+.table-responsive::-webkit-scrollbar{height:8px}
+.table-responsive::-webkit-scrollbar-track{background:var(--border-light);border-radius:4px}
+.table-responsive::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
+
+@media(max-width:768px){
+  .mobile-menu-btn{display:inline-flex}
+  .sidebar-close{display:inline-flex}
+  .mobile-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:calc(var(--z-sidebar) - 1)}
+  .app-sidebar.open{transform:translateX(0);box-shadow:var(--shadow-xl)}
+}
+
+@media(max-width:640px){
+  .app-header{padding:0 var(--space-4)}
+  .header-breadcrumb{display:none}
+  .header-user-meta{display:none}
+
+  /* Page headers stack: title above action buttons */
+  .page-head{flex-direction:column;align-items:flex-start;gap:var(--space-3)}
+  .page-head-actions{display:flex;flex-wrap:wrap;gap:var(--space-2);width:100%}
+  .page-head-actions .btn{flex:1 1 auto}
+
+  .detail-head{flex-direction:column;align-items:flex-start;gap:var(--space-3)}
+  .action-bar{flex-direction:column;align-items:flex-start;gap:var(--space-3)}
+  .action-bar-buttons{flex-wrap:wrap;width:100%}
+  .action-bar-buttons .btn{flex:1 1 auto}
+
+  /* Filter bars stack full-width */
+  .filter-bar .form-input,.filter-bar .form-select,.filter-bar .search-input{width:100%;min-width:0}
+
+  /* Tappable controls: primary buttons and inputs at least 44px tall */
+  .btn:not(.btn-sm):not(.btn-xs):not(.btn-xl){height:44px}
+  .form-input,.form-select{height:44px}
+  .form-textarea{min-height:88px}
+
+  /* Notification popover spans the viewport on phones */
+  .notif-popover{position:fixed;top:var(--header-height);left:var(--space-3);right:var(--space-3);width:auto;max-height:70vh}
+  .notif-list{max-height:60vh}
+}

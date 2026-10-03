@@ -4,9 +4,10 @@ import { Component } from '@angular/core';
   selector: 'app-layout',
   template: `
     <div class="app-layout">
-      <app-sidebar></app-sidebar>
+      <app-sidebar [open]="sidebarOpen" (close)="sidebarOpen = false"></app-sidebar>
+      <div class="mobile-backdrop" *ngIf="sidebarOpen" (click)="sidebarOpen = false"></div>
       <div class="app-main">
-        <app-header></app-header>
+        <app-header (toggleSidebar)="toggleSidebar()"></app-header>
         <div class="app-content">
           <router-outlet></router-outlet>
         </div>
@@ -14,4 +15,10 @@ import { Component } from '@angular/core';
     </div>
   `,
 })
-export class LayoutComponent {}
+export class LayoutComponent {
+  sidebarOpen = false;
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+}
